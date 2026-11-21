@@ -53,6 +53,15 @@ These commands handle the deployment workflow of Actors to Apify platform. Use t
 <!-- actor-deploy-commands-end -->
 <!-- prettier-ignore-end -->
 
+#### Actor environment variables
+
+These commands manage the environment variables of Actor versions on the Apify platform.
+
+<!-- prettier-ignore-start -->
+<!-- actor-env-commands-start -->
+<!-- actor-env-commands-end -->
+<!-- prettier-ignore-end -->
+
 #### Actor builds
 
 Use these commands to manage Actor build processes. They help you create, monitor, and maintain versioned snapshots of your Actors that can be executed on Apify platform.
