@@ -67,6 +67,8 @@ const categories: Record<string, CommandsInCategory[]> = {
 		//
 		{ command: Commands.env },
 		{ command: Commands.envLs },
+		{ command: Commands.envSet },
+		{ command: Commands.envRm },
 	],
 	'actor-build': [
 		//

@@ -10,12 +10,24 @@ import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useUniqueId } from '../../__setup__/hooks/useUniqueId.js';
 
 const SECRET_VALUE = 's3cr3t-sentinel';
+const SET_VALUE = 's3cr3t-value';
+
+// `apify env set` reads the value from stdin here. Unmocked, both modules cache per process and wait on the worker's stdin.
+vitest.mock('../../../src/lib/hooks/useStdin.js', () => ({
+	useStdin: async () => ({ isTTY: false, hasData: true, waitDelay: 0, stream: process.stdin }),
+}));
+vitest.mock('../../../src/lib/commands/read-stdin.js', () => ({
+	readStdin: async () => Buffer.from(`${SET_VALUE}\n`),
+	stdinWasCutShort: () => false,
+}));
 
 useAuthSetup({ perTest: false });
 
 const { logMessages } = useConsoleSpy();
 
 const { EnvLsCommand } = await import('../../../src/commands/env/ls.js');
+const { EnvRmCommand } = await import('../../../src/commands/env/rm.js');
+const { EnvSetCommand } = await import('../../../src/commands/env/set.js');
 
 describe('[api] apify env ls', () => {
 	const actorIds: string[] = [];
@@ -109,6 +121,83 @@ describe('[api] apify env ls', () => {
 
 			expect(process.exitCode).toBe(250);
 			expect(logMessages.error.join('\n')).toContain("Version 9.9 doesn't exist");
+		},
+		TEST_TIMEOUT,
+	);
+});
+
+describe('[api] apify env set and rm', () => {
+	let actorId: string;
+	let originalExitCode: typeof process.exitCode;
+
+	beforeAll(async () => {
+		await safeLogin();
+
+		const actor = await testUserClient.actors().create({
+			name: useUniqueId('cli-env-set-rm'),
+			isPublic: false,
+			versions: [
+				{
+					versionNumber: '0.0',
+					sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES as never,
+					buildTag: 'latest',
+					sourceFiles: [],
+				},
+			],
+		});
+		actorId = actor.id;
+	}, TEST_TIMEOUT);
+
+	afterAll(async () => {
+		if (actorId) {
+			await testUserClient.actor(actorId).delete();
+		}
+	}, TEST_TIMEOUT);
+
+	beforeEach(() => {
+		originalExitCode = process.exitCode;
+	});
+
+	afterEach(() => {
+		process.exitCode = originalExitCode;
+	});
+
+	const listEnvVars = async () => {
+		logMessages.log.length = 0;
+		await testRunCommand(EnvLsCommand, { flags_actor: actorId, flags_json: true });
+		return JSON.parse(logMessages.log.join('\n')).envVars;
+	};
+
+	it(
+		'sets a secret from stdin, lists it, and removes it without exposing the value',
+		async () => {
+			const setInstance = await testRunCommand(EnvSetCommand, {
+				args_name: 'SET_RM_SECRET',
+				flags_actor: actorId,
+				flags_secret: true,
+			});
+			expect(process.exitCode).toBeFalsy();
+			expect(logMessages.log.join('\n')).toContain('Created SET_RM_SECRET (secret)');
+
+			const stored = await testUserClient.actor(actorId).version('0.0').envVar('SET_RM_SECRET').get();
+			expect(stored).toMatchObject({ name: 'SET_RM_SECRET', isSecret: true });
+
+			expect(await listEnvVars()).toEqual([{ name: 'SET_RM_SECRET', isSecret: true }]);
+
+			const rmInstance = await testRunCommand(EnvRmCommand, {
+				args_name: 'SET_RM_SECRET',
+				flags_actor: actorId,
+				flags_yes: true,
+			});
+			expect(process.exitCode).toBeFalsy();
+
+			expect(await listEnvVars()).toEqual([]);
+
+			expect(logMessages.log.join('\n')).not.toContain(SET_VALUE);
+			expect(logMessages.error.join('\n')).not.toContain(SET_VALUE);
+			for (const instance of [setInstance, rmInstance]) {
+				expect(JSON.stringify((instance as unknown as Record<string, unknown>).telemetryData)).not.toContain(SET_VALUE);
+			}
 		},
 		TEST_TIMEOUT,
 	);

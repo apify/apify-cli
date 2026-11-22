@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 
 import { CompactMode, ResponsiveTable } from '../commands/responsive-table.js';
+import { info } from '../outputs.js';
 import type { PlatformEnvVar } from './platform.js';
 import type { EnvTarget } from './target.js';
 
@@ -30,4 +31,11 @@ export function renderEnvVarTable(envVars: PlatformEnvVar[]): string {
 	}
 
 	return table.render(CompactMode.WebLikeCompact);
+}
+
+/** Tells the user on stderr that runs see a change only after a rebuild. */
+export function printRebuildReminder(target: EnvTarget): void {
+	info({
+		message: `Runs use the env vars copied onto a build. Rebuild the Actor before runs see the change: apify builds create ${target.actorLabel} --version ${target.versionNumber}`,
+	});
 }
