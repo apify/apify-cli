@@ -61,7 +61,7 @@ All commands except `apify env migrate` need you to log in first. For the full l
 
 ### Choose the Actor and version
 
-Env vars belong to an Actor version, so each command first picks the Actor and the version:
+Env vars belong to an Actor version, so each command except `apify env migrate`, which takes only `--dir`, first picks the Actor and the version:
 
 - **Actor**: the one in `.actor/actor.json` in the current directory. Pass `--dir <path>` to pick an Actor folder in a monorepo; the command then reads `.actor/actor.json` and `.env` from that folder. Pass `--actor <ID or username/name>` to target an Actor without a local project.
 - **Version**: `--version <number>`, then `version` from `.actor/actor.json`, then `0.0`. This is the order `apify push` uses. With `--actor`, the local `.actor/actor.json` is ignored, so the version is `--version` or `0.0`.
@@ -108,8 +108,8 @@ The command shows the changes and asks before it makes them:
 ```text
 Changes to username/my-actor version 0.0:
   + NEW_VAR (secret)
-  ~ CHANGED_VAR
   ~ API_KEY (secret, replaced: secret values can't be compared)
+  ~ CHANGED_VAR
 Unchanged: LOG_LEVEL
 Only on the platform, kept: OLD_VAR. Pass --prune to delete.
 ```
@@ -129,7 +129,7 @@ apify env pull
 
 The command writes the env vars of the Actor version into `.env`:
 
-- Without a `.env`, it creates one.
+- Without a `.env`, it creates one, unless the version has no env vars.
 - With an existing `.env`, it shows the changes and asks first. It updates plain variables, and keeps comments, keys that exist only locally, and the local value of secrets. Pass `--yes` to skip the prompt.
 
 ### Compare `.env` with the platform
@@ -151,7 +151,7 @@ A secret env var is write-only: no one can read its value back, neither in Apify
 
 ## Rebuild after a change
 
-Runs use the env vars that were copied onto the build when it was made. After you change env vars with any `apify env` command or in Apify Console, rebuild the Actor before runs see the change:
+Runs use the env vars that were copied onto the build when it was made. After you change the platform env vars, with `apify env` or in Apify Console, rebuild the Actor before runs see the change:
 
 ```bash
 apify builds create --version 0.0
@@ -215,6 +215,6 @@ To apply the env vars to a single push, add the `--apply-env-vars-to-build` flag
 apify env diff || { echo "The platform env vars differ from .env. Run apify env push or apify env pull."; exit 1; }
 ```
 
-Make the hook executable with `chmod +x .git/hooks/pre-commit`.
+Make the hook executable with `chmod +x .git/hooks/pre-commit`. The hook runs in the repository root, so in a monorepo add `--dir <path>` for each Actor. It also stops the commit when the check can't run, for example when you aren't logged in; the error above the message says why.
 
 In CI, `.env` isn't in the repository, because it's gitignored. Create it before `apify env diff` runs, for example from your CI provider's secrets, and log in, for example by setting `APIFY_TOKEN`. Without a `.env`, `apify env diff` fails with exit code 5.
