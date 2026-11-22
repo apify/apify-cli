@@ -134,8 +134,9 @@ export class EnvPullCommand extends ApifyCommand<typeof EnvPullCommand> {
 		if (content !== undefined) {
 			writeDotEnv(target.actorDir, content);
 			if (!json) {
+				const count = Object.keys(updates).length;
 				success({
-					message: `Wrote ${Object.keys(updates).length} variables from ${describeTarget(target)} to ${dotEnv.path}.`,
+					message: `Wrote ${count} ${count === 1 ? 'variable' : 'variables'} from ${describeTarget(target)} to ${dotEnv.path}.`,
 					stdout: true,
 				});
 			}

@@ -162,7 +162,19 @@ describe('apify env pull', () => {
 		await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_version: '1.0' });
 
 		expect(readDotEnvFile()).toBe('ONLY_PLAIN=x\n');
+		expect(stdout()).toContain('Wrote 1 variable from tester/my-actor version 1.0');
 		expect(stderr()).not.toContain('Secret values');
+	});
+
+	it('writes no .env when the version has no env vars', async () => {
+		envPlatform.state.actors[0].versions.push({ versionNumber: '2.0', envVars: [] });
+
+		await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_version: '2.0', flags_json: true });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(existsSync(dotEnvPath())).toBe(false);
+		expect(stderr()).toContain('No env vars on tester/my-actor version 2.0, so no .env was written.');
+		expect(JSON.parse(stdout())).toMatchObject({ created: false, added: [], secretsEmpty: [] });
 	});
 
 	it('says .env is up to date and writes nothing when nothing changes', async () => {
