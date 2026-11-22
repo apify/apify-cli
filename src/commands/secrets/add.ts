@@ -1,11 +1,12 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { warnDeprecated } from '../../lib/env-vars/deprecations.js';
 import { addSecret } from '../../lib/secrets.js';
 
 export class SecretsAddCommand extends ApifyCommand<typeof SecretsAddCommand> {
 	static override name = 'add' as const;
 
-	static override description = `Adds a new secret to '~/.apify' for use in Actor environment variables.`;
+	static override description = `Deprecated: use .env and apify env instead. Adds a new secret to '~/.apify' for use in Actor environment variables.`;
 
 	static override examples = [
 		{
@@ -28,6 +29,8 @@ export class SecretsAddCommand extends ApifyCommand<typeof SecretsAddCommand> {
 	};
 
 	async run() {
+		warnDeprecated('secretsCommand', this.telemetryData);
+
 		const { name, value } = this.args;
 
 		addSecret(name, value);

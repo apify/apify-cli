@@ -1,4 +1,5 @@
 import { USER_AGENT } from '../../../entrypoints/_shared.js';
+import type { DeprecationKind } from '../../env-vars/deprecations.js';
 import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 import type { InstallMethod } from '../useCLIMetadata.js';
 import { useCLIMetadata } from '../useCLIMetadata.js';
@@ -52,6 +53,9 @@ interface CliCommandEvent {
 		selected: number;
 		failed: number;
 	};
+
+	/** Which deprecation warnings the command printed. */
+	deprecationWarnings?: DeprecationKind[];
 
 	login?: {
 		method: 'oauth2-device' | 'oauth2-code' | 'console' | 'manual' | 'token';

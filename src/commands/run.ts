@@ -23,7 +23,9 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
+import { warnDeprecated } from '../lib/env-vars/deprecations.js';
 import { readDotEnv } from '../lib/env-vars/dotenv.js';
+import { hasLegacyEnvVars } from '../lib/env-vars/legacy.js';
 import { execWithLog } from '../lib/exec.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
@@ -233,6 +235,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		}
 
 		const { config: localConfig } = localConfigResult.unwrap();
+
+		if (hasLegacyEnvVars(localConfig)) warnDeprecated('environmentVariables', this.telemetryData);
 
 		// Read .env before purging storage or writing input, so an unreadable file stops the run with nothing changed.
 		const dotEnvVars = readDotEnv(cwd).vars;

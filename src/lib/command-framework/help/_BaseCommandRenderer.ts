@@ -20,6 +20,10 @@ export function experimentalLabel(command: Pick<typeof BuiltApifyCommand, 'exper
 	return command.experimental ? `${chalk.yellow('[EXPERIMENTAL]')} ` : '';
 }
 
+export function deprecatedLabel(command: Pick<typeof BuiltApifyCommand, 'deprecated'>): string {
+	return command.deprecated ? `${chalk.yellow('[DEPRECATED]')} ` : '';
+}
+
 export abstract class BaseCommandRenderer {
 	protected readonly command: typeof BuiltApifyCommand;
 
@@ -35,7 +39,7 @@ export abstract class BaseCommandRenderer {
 	public abstract selectiveRender(options: SelectiveRenderOptions): string;
 
 	protected pushShortDescription(result: string[]) {
-		const labels = `${experimentalLabel(this.command)}${this.command.interactive ? `${chalk.yellow('[INTERACTIVE]')} ` : ''}`;
+		const labels = `${deprecatedLabel(this.command)}${experimentalLabel(this.command)}${this.command.interactive ? `${chalk.yellow('[INTERACTIVE]')} ` : ''}`;
 
 		if (this.command.shortDescription) {
 			result.push(`${labels}${this.command.shortDescription}`, '');

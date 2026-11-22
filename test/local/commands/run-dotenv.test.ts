@@ -3,6 +3,7 @@ import process from 'node:process';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { __resetDeprecationWarningsForTests } from '../../../src/lib/env-vars/deprecations.js';
 import { getLocalDatasetPath } from '../../../src/lib/utils.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -63,6 +64,7 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 
 	beforeEach(() => {
 		resetCwdCaches();
+		__resetDeprecationWarningsForTests();
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), originalActorJson);
 		rmSync(joinPath('.env'), { force: true });
 		rmSync(resultPath, { force: true });
@@ -119,6 +121,38 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 		writeFileSync(joinPath('.env'), 'CRAWLEE_PURGE_ON_START=dotenv\n');
 
 		expect((await runAndReadEnv()).CRAWLEE_PURGE_ON_START).toBe('dotenv');
+	});
+
+	describe('deprecation of environmentVariables', () => {
+		const DEPRECATION = '"environmentVariables" in .actor/actor.json is deprecated';
+		const deprecationLines = () => logMessages.error.filter((line) => line.includes(DEPRECATION));
+
+		it('warns once on stderr and records it when environmentVariables is non-empty', async () => {
+			setEnvironmentVariables({ FROM_ACTOR_JSON: 'actor-json', SECRET_REF: '@missing' });
+
+			const instance = await testRunCommand(RunCommand, { flags_allowMissingSecrets: true });
+
+			expect(deprecationLines()).toHaveLength(1);
+			expect(logMessages.log.join('\n')).not.toContain(DEPRECATION);
+			expect(instance['telemetryData'].deprecationWarnings).toEqual(['environmentVariables']);
+			expect(JSON.parse(readFileSync(resultPath, 'utf8')).FROM_ACTOR_JSON).toBe('actor-json');
+		});
+
+		it("doesn't warn when environmentVariables is empty", async () => {
+			setEnvironmentVariables({});
+
+			const instance = await testRunCommand(RunCommand, {});
+
+			expect(deprecationLines()).toHaveLength(0);
+			expect(instance['telemetryData'].deprecationWarnings).toBeUndefined();
+		});
+
+		it("doesn't warn without environmentVariables", async () => {
+			const instance = await testRunCommand(RunCommand, {});
+
+			expect(deprecationLines()).toHaveLength(0);
+			expect(instance['telemetryData'].deprecationWarnings).toBeUndefined();
+		});
 	});
 
 	it('passes @secret references in .env literally', async () => {
