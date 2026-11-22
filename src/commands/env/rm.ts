@@ -64,7 +64,7 @@ export class EnvRmCommand extends ApifyCommand<typeof EnvRmCommand> {
 			message: `Delete ${name} from ${describeTarget(target)}?`,
 			default: false,
 			preAnswered: this.flags.yes || undefined,
-			errorMessageForStdin: 'To delete without a prompt, pass --yes.',
+			errorMessageForStdin: 'apify env rm asks before it deletes anything. To delete without a prompt, pass --yes.',
 		});
 
 		if (!confirmed) {
