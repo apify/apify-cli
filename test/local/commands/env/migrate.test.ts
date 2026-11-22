@@ -166,6 +166,36 @@ describe('apify env migrate', () => {
 		expect(readActorJson()).toBe(actorJsonWithout());
 	});
 
+	it("doesn't say a missing secret's key is written empty when .env already has the key", async () => {
+		writeFileSync(dotEnvPath(), `TOKEN=${LOCAL_VALUE}\n`);
+		writeActorJson(actorJsonWith({ TOKEN: '@token', OTHER: '@other' }));
+
+		await testRunCommand(EnvMigrateCommand, {
+			flags_dir: actorDir,
+			flags_yes: true,
+			flags_allowMissingSecrets: true,
+		});
+
+		expect(process.exitCode).toBeUndefined();
+		expect(readDotEnvFile()).toBe(`TOKEN=${LOCAL_VALUE}\nOTHER=\n`);
+		expect(stderr()).toContain(
+			"These secrets aren't in the local secrets store, so their keys are written empty: other. Fill them in .env.",
+		);
+		expect(stderr()).toContain('Kept the .env value of TOKEN; actor.json had a different one.');
+		expectNoValues();
+	});
+
+	it("doesn't read the secrets store when no value refers to it", async () => {
+		mkdirSync(dirname(SECRETS_FILE_PATH()), { recursive: true });
+		writeFileSync(SECRETS_FILE_PATH(), '{ not json');
+		writeActorJson(actorJsonWith({ PLAIN: 'p' }));
+
+		await testRunCommand(EnvMigrateCommand, { flags_dir: actorDir, flags_yes: true });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(readDotEnvFile()).toBe('PLAIN=p\n');
+	});
+
 	it('keeps the values already in .env and reports the conflicts', async () => {
 		writeFileSync(dotEnvPath(), `# local\nPLAIN=${LOCAL_VALUE}\nSAME=same\n`);
 		writeActorJson(actorJsonWith({ PLAIN: PLAIN_VALUE, SAME: 'same', NEW: 'n' }));

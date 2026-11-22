@@ -138,9 +138,13 @@ export class EnvMigrateCommand extends ApifyCommand<typeof EnvMigrateCommand> {
 			stdout: true,
 		});
 
-		if (missingNames.length) {
+		// Only keys that land in .env are written empty; a key already there keeps its value.
+		const writtenEmpty = [
+			...new Set(missingSecrets.filter(({ key }) => newKeys.includes(key)).map(({ secretName }) => secretName)),
+		].sort(byName);
+		if (writtenEmpty.length) {
 			warning({
-				message: `These secrets aren't in the local secrets store, so their keys are written empty: ${missingNames.join(', ')}. Fill them in .env.`,
+				message: `These secrets aren't in the local secrets store, so their keys are written empty: ${writtenEmpty.join(', ')}. Fill them in .env.`,
 			});
 		}
 
