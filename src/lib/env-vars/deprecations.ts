@@ -1,11 +1,11 @@
-import { LOCAL_CONFIG_PATH } from '../consts.js';
 import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
 import { warning } from '../outputs.js';
 
 export type DeprecationKind = 'environmentVariables' | 'secretsCommand';
 
 const MESSAGES: Record<DeprecationKind, string> = {
-	environmentVariables: `"environmentVariables" in ${LOCAL_CONFIG_PATH} is deprecated and will be removed in the next major version. Put local values in .env, and run apify env migrate to move them.`,
+	environmentVariables:
+		'"environmentVariables" in .actor/actor.json is deprecated and will be removed in the next major version. Put local values in .env, and run apify env migrate to move them.',
 	secretsCommand:
 		'apify secrets and "@secret" references are deprecated and will be removed in the next major version. Put local values in .env, and set platform values with apify env set or apify env push.',
 };
