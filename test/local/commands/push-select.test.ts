@@ -361,7 +361,7 @@ describe('apify push in a repository with several Actors', () => {
 				}),
 			);
 
-			const instance = await run({ flags_all: true, flags_allowMissingSecrets: true });
+			const instance = await run({ flags_all: true });
 
 			expect(commandProcess.exitCode).toBeFalsy();
 			expect(pushedActorIds()).toEqual([ACTOR_A.id, ACTOR_B.id, ACTOR_C.id]);

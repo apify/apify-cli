@@ -13,7 +13,7 @@ To pass additional configuration to your Actor, define custom environment variab
 
 ### Define in `.actor/actor.json`
 
-To set custom variables, add them to the `environmentVariables` object in `.actor/actor.json` and push the Actor to Apify:
+To set custom variables for local runs, add them to the `environmentVariables` object in `.actor/actor.json`:
 
 ```json
 {
@@ -28,7 +28,7 @@ To set custom variables, add them to the `environmentVariables` object in `.acto
 }
 ```
 
-Variables defined in `.actor/actor.json` override the ones defined in Apify Console.
+`apify push` doesn't send these variables to the Apify platform. To set them on the platform, use `apify env push` or Apify Console.
 
 ### Define in Apify Console
 
@@ -39,17 +39,6 @@ To set custom variables in Apify Console:
 1. From the table, select the Actor you want to configure.
 1. Go to the **Source** tab > **Code**.
 1. Expand the **Environment variables** section.
-
-Once done, delete `environmentVariables` from `.actor/actor.json`. Variables defined in that file override the ones defined in Apify Console.
-
-```json
-{
-  "actorSpecification": 1,
-  "name": "dataset-to-mysql",
-  "version": "0.1",
-  "buildTag": "latest"
-}
-```
 
 ### Define secrets
 

@@ -12,3 +12,8 @@ export function countLegacyEnvVars(environmentVariables: unknown): { envVarsCoun
 		secretRefsCount: values.filter((value) => typeof value === 'string' && SECRET_REF_PATTERN.test(value)).length,
 	};
 }
+
+/** True when actor.json has a non-empty environmentVariables object. */
+export function hasLegacyEnvVars(config: Record<string, unknown> | undefined): boolean {
+	return countLegacyEnvVars(config?.environmentVariables).envVarsCount > 0;
+}

@@ -31,6 +31,7 @@ const build = { id: 'build1', actId: ACTOR_ID, buildNumber: '0.0.1', status: 'SU
 
 let currentVersion: Record<string, unknown>;
 const versionUpdate = vitest.fn(async () => ({}));
+const versionCreate = vitest.fn(async () => ({}));
 
 // Stands in for the platform: the Actor exists, and the version's source type is what is under test.
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
@@ -42,6 +43,7 @@ vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 		actor: () => ({
 			get: async () => actor,
 			version: () => ({ get: async () => currentVersion, update: versionUpdate }),
+			versions: () => ({ create: versionCreate }),
 			build: async () => build,
 		}),
 		build: () => ({ get: async () => build }),
@@ -83,6 +85,7 @@ let originalExitCode: typeof process.exitCode;
 beforeEach(async () => {
 	originalExitCode = process.exitCode;
 	versionUpdate.mockClear();
+	versionCreate.mockClear();
 	yesNoConfirm.mockClear();
 	await beforeAllCalls();
 	await mkdir(joinPath('.actor'), { recursive: true });
@@ -184,7 +187,7 @@ describe('apify push telemetry', () => {
 			}),
 		);
 
-		const instance = await testRunCommand(ActorsPushCommand, { flags_force: true, flags_allowMissingSecrets: true });
+		const instance = await run(true);
 
 		expect(process.exitCode).toBeFalsy();
 		expect(instance['telemetryData'].push).toEqual({
@@ -228,5 +231,90 @@ describe('apify push telemetry', () => {
 			envVarsCount: 0,
 			secretRefsCount: 0,
 		});
+	});
+});
+
+describe('apify push and environmentVariables', () => {
+	const LEGACY_WARNING = `"environmentVariables" in ${LOCAL_CONFIG_PATH} applies to local runs only.`;
+
+	const writeActorJson = (extra: Record<string, unknown>) =>
+		writeFile(
+			joinPath(LOCAL_CONFIG_PATH),
+			JSON.stringify({ actorSpecification: 1, name: actName, version: '0.0', buildTag: 'latest', ...extra }),
+		);
+
+	beforeEach(() => {
+		currentVersion = { versionNumber: '0.0', sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES };
+		resetCwdCaches();
+	});
+
+	it('sends no envVars, warns on stderr, and still records the counts', async () => {
+		// The @ref has no stored secret: resolving it used to fail the push without --allow-missing-secrets.
+		await writeActorJson({ environmentVariables: { PLAIN: 's3cr3t-sentinel', TOKEN: '@missingSecret' } });
+
+		const instance = await run(true);
+
+		expect(process.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		expect(versionUpdate.mock.calls[0][0 as never]).not.toHaveProperty('envVars');
+		expect(logMessages.error.join('\n')).toContain(LEGACY_WARNING);
+		expect(logMessages.error.join('\n')).toContain('Run apify env push, or set them in Apify Console.');
+		expect(logMessages.log.join('\n')).not.toContain(LEGACY_WARNING);
+		expect(`${logMessages.log.join('\n')}${logMessages.error.join('\n')}`).not.toContain('s3cr3t-sentinel');
+		expect(instance['telemetryData'].push).toEqual({
+			actorId: ACTOR_ID,
+			wasCreated: false,
+			envVarsCount: 2,
+			secretRefsCount: 1,
+		});
+	});
+
+	it.each([
+		['an empty', { environmentVariables: {} }],
+		['no', {}],
+	])('sends no envVars and does not warn with %s environmentVariables', async (_label, extra) => {
+		await writeActorJson(extra);
+
+		await run(true);
+
+		expect(process.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		expect(versionUpdate.mock.calls[0][0 as never]).not.toHaveProperty('envVars');
+		expect(logMessages.error.join('\n')).not.toContain(LEGACY_WARNING);
+	});
+
+	it('sends no envVars when it creates the version', async () => {
+		currentVersion = undefined as never;
+		await writeActorJson({ environmentVariables: { PLAIN: 'value' }, applyEnvVarsToBuild: true });
+
+		await run(true);
+
+		expect(process.exitCode).toBeFalsy();
+		expect(versionCreate).toHaveBeenCalledTimes(1);
+		expect(versionCreate.mock.calls[0][0 as never]).not.toHaveProperty('envVars');
+		expect(versionCreate.mock.calls[0][0 as never]).toMatchObject({ versionNumber: '0.0', applyEnvVarsToBuild: true });
+	});
+
+	it('still sends applyEnvVarsToBuild, from actor.json or the flag', async () => {
+		await writeActorJson({ environmentVariables: { PLAIN: 'value' }, applyEnvVarsToBuild: true });
+
+		await run(true);
+		await testRunCommand(ActorsPushCommand, { flags_force: true, flags_applyEnvVarsToBuild: false });
+
+		expect(versionUpdate.mock.calls[0][0 as never]).toMatchObject({ applyEnvVarsToBuild: true });
+		expect(versionUpdate.mock.calls[1][0 as never]).toMatchObject({ applyEnvVarsToBuild: false });
+	});
+
+	it('warns that --allow-missing-secrets has no effect, and pushes', async () => {
+		await writeActorJson({ environmentVariables: { TOKEN: '@missingSecret' } });
+
+		await testRunCommand(ActorsPushCommand, { flags_force: true, flags_allowMissingSecrets: true });
+
+		expect(process.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		expect(versionUpdate.mock.calls[0][0 as never]).not.toHaveProperty('envVars');
+		expect(logMessages.error.join('\n')).toContain(
+			'--allow-missing-secrets is deprecated and has no effect. apify push no longer sends env vars.',
+		);
 	});
 });

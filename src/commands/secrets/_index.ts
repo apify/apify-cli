@@ -7,7 +7,7 @@ import { SecretsRmCommand } from './rm.js';
 export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand> {
 	static override name = 'secrets' as const;
 
-	static override description = `Manage locally stored secrets that can be referenced from '${LOCAL_CONFIG_PATH}' environment variables using the "@" prefix (e.g. "@mySecret"). Secrets are uploaded alongside the Actor and stored encrypted on the Apify platform.`;
+	static override description = `Manage locally stored secrets that '${LOCAL_CONFIG_PATH}' environment variables reference with the "@" prefix (e.g. "@mySecret") for local runs. To set secrets on the platform, use apify env set --secret.`;
 
 	static override group = 'Authentication';
 
@@ -17,8 +17,8 @@ export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand
 			command: 'apify secrets add mySecret TopSecretValue123',
 		},
 		{
-			description: `Reference the secret from .actor/actor.json using the "@" prefix, e.g. "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" }, then push as usual.`,
-			command: 'apify push',
+			description: `Reference the secret from .actor/actor.json using the "@" prefix, e.g. "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" }, then run the Actor locally.`,
+			command: 'apify run',
 		},
 	];
 

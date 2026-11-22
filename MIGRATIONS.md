@@ -1,3 +1,24 @@
+# Migration from 1.13.x to 1.14.0
+
+## Breaking change: apify push no longer uploads environmentVariables
+
+`apify push` used to send `environmentVariables` from `.actor/actor.json` to the Actor version on the Apify platform. That replaced the whole list of the version's env vars, so variables set only in Apify Console were deleted on every push.
+
+Now `apify push` deploys code only and never changes the platform env vars. CLI-pushed Actors and Actors built from a Git repository behave the same. `environmentVariables` in `.actor/actor.json` still applies to `apify run`.
+
+If you set platform env vars only through `apify push`, set them another way:
+
+1. Put the values in a `.env` file next to the `.actor` folder, one `NAME=value` line per variable, and run `apify env push`. New variables are created as secrets; pass `--plain` to create them as plain variables.
+1. Or set them one by one with `apify env set NAME` (add `--secret` for a secret), or in Apify Console.
+
+Env vars that are already on the platform stay as they are, so an Actor keeps working until you change them.
+
+Other changes:
+
+- `applyEnvVarsToBuild` (the field in `.actor/actor.json` and the `--apply-env-vars-to-build` flag) still applies. It's a build setting, not a value, so `apify push` keeps sending it.
+- `--allow-missing-secrets` on `apify push` has no effect and prints a warning. `apify run` still uses it.
+- When `.actor/actor.json` has a non-empty `environmentVariables`, `apify push` prints a warning that the values apply to local runs only.
+
 # Migration from 0.9.x to 0.10.0
 
 ## Breaking change: deprecating apify.json in favor of .actor/actor.json

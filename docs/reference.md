@@ -268,9 +268,9 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Manage locally stored secrets that can be referenced from '.actor/actor.json' 
-  environment variables using the "@" prefix (e.g. "@mySecret"). Secrets are 
-  uploaded alongside the Actor and stored encrypted on the Apify platform.
+  Manage locally stored secrets that '.actor/actor.json' environment variables 
+  reference with the "@" prefix (e.g. "@mySecret") for local runs. To set 
+  secrets on the platform, use apify env set --secret.
 
 SUBCOMMANDS
   secrets add  Adds a new secret to '~/.apify' for use in Actor
@@ -1044,6 +1044,9 @@ DESCRIPTION
   Files matched by .gitignore and .actorignore are excluded. Use negation 
   patterns (e.g. !dist/) in .actorignore to force-include git-ignored files. 
   .env and .env.* files are never uploaded, except .env.example.
+  Env vars aren't sent: "environmentVariables" in '.actor/actor.json' applies to
+   local runs only. Set platform env vars with apify env push or in Apify 
+  Console.
   If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push 
   uploads the whole Git repository: the Actor folder as above, and everything 
   else that Git tracks or doesn't ignore (.actorignore doesn't apply there). 
@@ -1066,9 +1069,8 @@ FLAGS
                                  in the subdirectories, except the ones ignored by
                                  .gitignore. Works only from a directory without an
                                  Actor config of its own.
-      --allow-missing-secrets    Allow the command to
-                                 continue even when secret values are not found in
-                                 the local secrets storage.
+      --allow-missing-secrets    Deprecated, has no
+                                 effect: apify push doesn't send env vars.
       --apply-env-vars-to-build  Make the environment
                                  variables also available to the Actor build
                                  process. Use --no-apply-env-vars-to-build to turn
