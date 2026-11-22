@@ -150,14 +150,21 @@ export function writeDotEnv(actorDir: string, content: string): void {
 	}
 }
 
+/** True when ignore rules cover `.env` in the Actor directory, also when the file doesn't exist yet. */
+export async function isDotEnvGitignored(actorDir: string): Promise<boolean> {
+	// Naming .env makes the matcher ask git about it by name, so the answer holds for a .env that doesn't exist yet.
+	const isIgnored = await getGitignoreMatcher(actorDir, [DOTENV_FILE_NAME]);
+	return isIgnored(DOTENV_FILE_NAME);
+}
+
 /**
  * Adds `.env` to the Actor directory's .gitignore unless ignore rules already cover it. Call it before writing .env, so
  * the written file is never left unignored. `tracked` says whether Git already tracks .env, which .gitignore doesn't
  * change.
  */
 export async function ensureDotEnvGitignored(actorDir: string): Promise<{ added: boolean; tracked: boolean }> {
-	// Naming .env makes the matcher ask git about it by name, so the answer holds for a .env that doesn't exist yet.
-	const isIgnored = await getGitignoreMatcher(actorDir, [DOTENV_FILE_NAME]);
-	const added = isIgnored(DOTENV_FILE_NAME) ? false : ensureGitignoreEntries(actorDir, [DOTENV_FILE_NAME]).length > 0;
+	const added = (await isDotEnvGitignored(actorDir))
+		? false
+		: ensureGitignoreEntries(actorDir, [DOTENV_FILE_NAME]).length > 0;
 	return { added, tracked: isTrackedByGit(actorDir, DOTENV_FILE_NAME) };
 }

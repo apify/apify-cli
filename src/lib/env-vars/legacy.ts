@@ -1,4 +1,5 @@
-const SECRET_REF_PATTERN = /^@.+/;
+/** A string value that refers to a secret in the local secrets store: `@` and the secret's name. */
+export const SECRET_REF_PATTERN = /^@.+/;
 
 /** Counts only, never names or values. Anything but a plain object counts 0. */
 export function countLegacyEnvVars(environmentVariables: unknown): { envVarsCount: number; secretRefsCount: number } {

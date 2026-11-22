@@ -8,7 +8,8 @@ Now `apify push` deploys code only and never changes the platform env vars. CLI-
 
 If you set platform env vars only through `apify push`, set them another way:
 
-1. Put the values in a `.env` file next to the `.actor` folder, one `NAME=value` line per variable, and run `apify env push`. New variables are created as secrets; pass `--plain` to create them as plain variables.
+1. Run `apify env migrate`, then `apify env push`. `apify env migrate` moves `environmentVariables` into a `.env` file next to the `.actor` folder, resolves `@secret` references from the local secrets store, adds `.env` to `.gitignore`, and removes the block from `.actor/actor.json`. `apify env push` then sets the values on the platform.
+1. Or put the values in a `.env` file next to the `.actor` folder, one `NAME=value` line per variable, and run `apify env push`. New variables are created as secrets; pass `--plain` to create them as plain variables.
 1. Or set them one by one with `apify env set NAME` (add `--secret` for a secret), or in Apify Console.
 
 Env vars that are already on the platform stay as they are, so an Actor keeps working until you change them.

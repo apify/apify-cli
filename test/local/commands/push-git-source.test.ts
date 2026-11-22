@@ -259,6 +259,7 @@ describe('apify push and environmentVariables', () => {
 		expect(versionUpdate.mock.calls[0][0 as never]).not.toHaveProperty('envVars');
 		expect(logMessages.error.join('\n')).toContain(LEGACY_WARNING);
 		expect(logMessages.error.join('\n')).toContain('Run apify env push, or set them in Apify Console.');
+		expect(logMessages.error.join('\n')).toContain('Run apify env migrate to move them to .env.');
 		expect(logMessages.log.join('\n')).not.toContain(LEGACY_WARNING);
 		expect(`${logMessages.log.join('\n')}${logMessages.error.join('\n')}`).not.toContain('s3cr3t-sentinel');
 		expect(instance['telemetryData'].push).toEqual({
