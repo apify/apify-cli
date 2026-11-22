@@ -3,20 +3,31 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 
+import { EnvLsCommand } from '../../../../src/commands/env/ls.js';
+import { EnvRmCommand } from '../../../../src/commands/env/rm.js';
 import { EnvSetCommand } from '../../../../src/commands/env/set.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { resetCwdCaches } from '../../../__setup__/reset-cwd-caches.js';
 
 // Unmocked, both cache per process and the implicit read waits on the worker's stdin.
-const stdin = vitest.hoisted(() => ({ data: undefined as Buffer | undefined }));
+const stdin = vitest.hoisted(() => ({ data: undefined as Buffer | undefined, isTTY: false }));
 vitest.mock('../../../../src/lib/hooks/useStdin.js', () => ({
-	useStdin: async () => ({ isTTY: false, hasData: true, waitDelay: 0, stream: process.stdin }),
+	useStdin: async () => ({ isTTY: stdin.isTTY, hasData: !stdin.isTTY, waitDelay: 0, stream: process.stdin }),
 }));
 vitest.mock('../../../../src/lib/commands/read-stdin.js', () => ({
 	readStdin: async () => stdin.data,
 	stdinWasCutShort: () => false,
 }));
+// A terminal prompts only outside CI, so the TTY test must not depend on the CI the suite runs in.
+vitest.mock('ci-info', async (importOriginal) => ({
+	...(await importOriginal<typeof import('ci-info')>()),
+	isCI: false,
+}));
+const maskedInput = vitest.hoisted(() => vitest.fn());
+const userInput = vitest.hoisted(() => vitest.fn());
+vitest.mock('../../../../src/lib/hooks/user-confirmations/useMaskedInput.js', () => ({ useMaskedInput: maskedInput }));
+vitest.mock('../../../../src/lib/hooks/user-confirmations/useUserInput.js', () => ({ useUserInput: userInput }));
 
 vitest.mock('../../../../src/lib/utils.js', async (importOriginal) => {
 	const { envPlatform } = await import('../../../__setup__/env-platform-mock.js');
@@ -45,6 +56,9 @@ beforeEach(() => {
 	resetCwdCaches();
 	vitest.mocked(getLoggedClientOrThrow).mockClear();
 	stdin.data = Buffer.from(`${SECRET_VALUE}\n`);
+	stdin.isTTY = false;
+	maskedInput.mockReset().mockResolvedValue(SECRET_VALUE);
+	userInput.mockReset().mockResolvedValue(SECRET_VALUE);
 	envPlatform.reset();
 	envPlatform.state.actors.push({
 		id: 'actor-1',
@@ -220,5 +234,51 @@ describe('apify env set', () => {
 
 		expect(envPlatform.writes).toEqual([{ method: 'create', actorId: 'actor-1', version: '1.0', name: 'NEW_VAR' }]);
 		expect(logMessages.error.join('\n')).toContain('apify builds create tester/my-actor --version 1.0');
+	});
+
+	it('masks the prompt in a terminal when the variable stays secret, also without --secret', async () => {
+		stdin.isTTY = true;
+
+		const instance = await testRunCommand(EnvSetCommand, { args_name: 'API_KEY', flags_dir: actorDir });
+
+		expect(maskedInput).toHaveBeenCalledWith({ message: 'Value of API_KEY:' });
+		expect(userInput).not.toHaveBeenCalled();
+		expect(envVarsOnPlatform()).toContainEqual({ name: 'API_KEY', value: SECRET_VALUE, isSecret: true });
+		expectNoValue(instance);
+	});
+
+	it('uses the plain prompt in a terminal for a new variable without --secret', async () => {
+		stdin.isTTY = true;
+
+		await testRunCommand(EnvSetCommand, { args_name: 'NEW_VAR', flags_dir: actorDir });
+
+		expect(userInput).toHaveBeenCalledWith({ message: 'Value of NEW_VAR:' });
+		expect(maskedInput).not.toHaveBeenCalled();
+	});
+
+	it('sets a variable through stdin, lists it with env ls, and removes it with env rm', async () => {
+		const setInstance = await testRunCommand(EnvSetCommand, {
+			args_name: 'ROUND_TRIP',
+			flags_dir: actorDir,
+			flags_secret: true,
+		});
+
+		const lsStart = logMessages.log.length;
+		await testRunCommand(EnvLsCommand, { flags_dir: actorDir, flags_json: true });
+		expect(JSON.parse(logMessages.log.slice(lsStart).join('\n')).envVars).toContainEqual({
+			name: 'ROUND_TRIP',
+			isSecret: true,
+		});
+
+		const rmInstance = await testRunCommand(EnvRmCommand, {
+			args_name: 'ROUND_TRIP',
+			flags_dir: actorDir,
+			flags_yes: true,
+		});
+		expect(envVarsOnPlatform().map(({ name }) => name)).not.toContain('ROUND_TRIP');
+		expect(process.exitCode).toBeUndefined();
+
+		expectNoValue(setInstance);
+		expectNoValue(rmInstance);
 	});
 });

@@ -162,10 +162,11 @@ describe('[api] apify env set and rm', () => {
 		process.exitCode = originalExitCode;
 	});
 
+	// Parses only the new lines, so the final checks still see the output of every command.
 	const listEnvVars = async () => {
-		logMessages.log.length = 0;
+		const start = logMessages.log.length;
 		await testRunCommand(EnvLsCommand, { flags_actor: actorId, flags_json: true });
-		return JSON.parse(logMessages.log.join('\n')).envVars;
+		return JSON.parse(logMessages.log.slice(start).join('\n')).envVars;
 	};
 
 	it(
