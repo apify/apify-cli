@@ -4,7 +4,7 @@ import process from 'node:process';
 
 import type { Actor, ActorVersionClient, ApifyClient } from 'apify-client';
 
-import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../consts.js';
+import { CommandExitCodes } from '../consts.js';
 import { findActorDirs, toPosixRelative } from '../find-actor-dirs.js';
 import { useActorConfig } from '../hooks/useActorConfig.js';
 import { getCurrentUserInfo, getLoggedClientOrThrow } from '../utils.js';
@@ -65,7 +65,8 @@ async function readLocalActorConfig(actorDir: string): Promise<Record<string, un
 	}
 
 	if (typeof config.name !== 'string' || !config.name) {
-		envFail(`${LOCAL_CONFIG_PATH} has no "name". Add it, or pass --actor <ID or username/name>.`);
+		// Written with "/" on every platform, as in the docs (LOCAL_CONFIG_PATH has "\" on Windows).
+		envFail('.actor/actor.json has no "name". Add it, or pass --actor <ID or username/name>.');
 	}
 
 	return config as Record<string, unknown> & { name: string };
@@ -129,7 +130,7 @@ export async function resolveEnvTarget(flags: EnvTargetFlags): Promise<EnvTarget
 	const versions = (actor.versions ?? []).map((version) => version.versionNumber);
 
 	if (!versions.includes(versionNumber)) {
-		const sourceHint = versionSource === 'actor.json' ? ` (taken from ${LOCAL_CONFIG_PATH})` : '';
+		const sourceHint = versionSource === 'actor.json' ? ' (taken from .actor/actor.json)' : '';
 		const known = versions.length ? `Its versions: ${versions.join(', ')}.` : 'The Actor has no versions.';
 		envFail(
 			`Version ${versionNumber} doesn't exist on Actor ${actorLabel}${sourceHint}. ${known} Pass --version <number>.`,
