@@ -199,6 +199,26 @@ describe('apify push telemetry', () => {
 		expect(telemetry).not.toContain('myToken');
 	});
 
+	it('records the counts when the push fails after reading actor.json', async () => {
+		await writeFile(
+			joinPath(LOCAL_CONFIG_PATH),
+			JSON.stringify({
+				actorSpecification: 1,
+				name: actName,
+				version: '0.0',
+				buildTag: 'latest',
+				dockerContextDir: 42,
+				environmentVariables: { PLAIN: 'value' },
+			}),
+		);
+
+		const instance = await run(true);
+
+		expect(logMessages.error.join('\n')).toContain('"dockerContextDir" in .actor/actor.json must be a string.');
+		expect(versionUpdate).not.toHaveBeenCalled();
+		expect(instance['telemetryData'].push).toEqual({ envVarsCount: 1, secretRefsCount: 0 });
+	});
+
 	it('records zero counts when actor.json has no environmentVariables', async () => {
 		const instance = await run(true);
 
