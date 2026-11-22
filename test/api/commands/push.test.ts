@@ -1,7 +1,6 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import process from 'node:process';
 
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
@@ -54,6 +53,8 @@ const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { ActorsPushCommand } = await import('../../../src/commands/actors/push.js');
+// The command sets the exit code on this mocked copy of `node:process`, not on the global one.
+const { default: commandProcess } = await import('node:process');
 
 describe('[api] apify push', () => {
 	const actorsForCleanup = new Set<string>();
@@ -254,7 +255,7 @@ describe('[api] apify push', () => {
 					flags_force: true,
 				});
 
-				expect(process.exitCode).to.be.eql(CommandExitCodes.InvalidActorJson);
+				expect(commandProcess.exitCode).to.be.eql(CommandExitCodes.InvalidActorJson);
 
 				const versionAfter = await testActorClient.version(actorJson.version).get();
 				const envVarsAfter = await testActorClient.version(actorJson.version).envVars().list();
@@ -270,7 +271,7 @@ describe('[api] apify push', () => {
 				// eslint-disable-next-line dot-notation
 				expect(pushInstance['telemetryData'].push).to.be.eql({ envVarsCount: 3, secretRefsCount: 1 });
 			} finally {
-				process.exitCode = undefined;
+				commandProcess.exitCode = undefined;
 				actorJson.environmentVariables = originalEnvironmentVariables;
 				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 				await testActorClient.delete();
