@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 
 import { resolveEnvTarget, versionClientFor } from '../../../../src/lib/env-vars/target.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../../../src/lib/utils.js';
 import { resetCwdCaches } from '../../../__setup__/reset-cwd-caches.js';
 
 vitest.mock('../../../../src/lib/utils.js', async (importOriginal) => {
@@ -35,6 +36,8 @@ beforeEach(() => {
 	process.exitCode = undefined;
 	root = mkdtempSync(join(tmpdir(), 'env-target-test-'));
 	resetCwdCaches();
+	vitest.mocked(getLoggedClientOrThrow).mockClear();
+	vitest.mocked(getCurrentUserInfo).mockClear();
 	envPlatform.reset();
 	envPlatform.state.actors.push(
 		{
@@ -121,6 +124,7 @@ describe('resolveEnvTarget', () => {
 		const target = await resolveEnvTarget({ dir: root, actor: 'someone/shared-actor' });
 
 		expect(target.actor.id).toBe('actor-2');
+		expect(getCurrentUserInfo).not.toHaveBeenCalled();
 	});
 
 	it('finds an Actor of the logged-in user by a bare name with --actor, lowercased', async () => {
@@ -157,6 +161,24 @@ describe('resolveEnvTarget', () => {
 	});
 
 	describe('errors', () => {
+		it.each([
+			['no Actor', () => undefined],
+			['actor.json without a name', () => writeActorJson(root, { version: '0.0' })],
+			[
+				'an unreadable actor.json',
+				() => {
+					mkdirSync(join(root, '.actor'));
+					writeFileSync(join(root, '.actor', 'actor.json'), '{ not json');
+				},
+			],
+		])('fails on %s before logging in', async (_, setUp) => {
+			setUp();
+
+			await expect(resolveEnvTarget({ dir: root })).rejects.toThrow();
+			expect(process.exitCode).toBe(5);
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+		});
+
 		it('fails when --dir does not exist', async () => {
 			const dir = join(root, 'missing');
 
