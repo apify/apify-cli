@@ -23,6 +23,7 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
+import { readDotEnv } from '../lib/env-vars/dotenv.js';
 import { execWithLog } from '../lib/exec.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
@@ -113,7 +114,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 	static override description =
 		`Executes Actor locally with simulated Apify environment variables.\n` +
-		`Stores data in local '${DEFAULT_LOCAL_STORAGE_DIR}' directory.\n\n` +
+		`Stores data in local '${DEFAULT_LOCAL_STORAGE_DIR}' directory.\n` +
+		`Loads variables from a .env file in the Actor directory; they override the other sources.\n\n` +
 		`NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.`;
 
 	static override group = 'Local Actor Development';
@@ -429,6 +431,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			});
 			Object.assign(localEnvVars, updatedEnv);
 		}
+
+		const dotEnvVars = readDotEnv(cwd).vars;
+		cliDebugPrint('[run] loaded .env', { keys: Object.keys(dotEnvVars).length });
+		Object.assign(localEnvVars, dotEnvVars);
 
 		// localEnvVars must take priority so the CLI can redirect the SDK to temp input files
 		const env = { ...process.env, ...localEnvVars };

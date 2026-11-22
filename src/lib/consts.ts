@@ -69,6 +69,8 @@ export const LOCAL_CONFIG_NAME = 'actor.json';
 
 export const LOCAL_CONFIG_PATH = join(ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_NAME);
 
+export const DOTENV_FILE_NAME = '.env';
+
 export const SUPPORTED_NODEJS_VERSION = pkg.engines.node;
 
 const githubActionsRunUrl = ciInfo.GITHUB_ACTIONS
