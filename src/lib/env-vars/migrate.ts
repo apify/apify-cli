@@ -23,7 +23,7 @@ export function readActorJsonDocument(actorDir: string): ActorJsonDocument {
 	} catch (err) {
 		const { code, message } = err as NodeJS.ErrnoException;
 		if (code === 'ENOENT') {
-			envFail(`No ${LOCAL_CONFIG_PATH} in ${actorDir}. Run the command in an Actor directory, or pass --dir <path>.`);
+			envFail(`No .actor/actor.json in ${actorDir}. Run the command in an Actor directory, or pass --dir <path>.`);
 		}
 		envFail(`Couldn't read ${path}: ${message}`, CommandExitCodes.InvalidActorJson);
 	}

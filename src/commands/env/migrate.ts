@@ -5,7 +5,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
-import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { CommandExitCodes } from '../../lib/consts.js';
 import {
 	checkDotEnvWritable,
 	ensureDotEnvGitignored,
@@ -71,14 +71,14 @@ export class EnvMigrateCommand extends ApifyCommand<typeof EnvMigrateCommand> {
 
 		const { config } = readActorJsonDocument(actorDir);
 		if (!Object.hasOwn(config, 'environmentVariables')) {
-			info({ message: `Nothing to migrate: ${LOCAL_CONFIG_PATH} has no "environmentVariables".` });
+			info({ message: 'Nothing to migrate: .actor/actor.json has no "environmentVariables".' });
 			return;
 		}
 
 		const { environmentVariables } = config;
 		if (!environmentVariables || typeof environmentVariables !== 'object' || Array.isArray(environmentVariables)) {
 			envFail(
-				`"environmentVariables" in ${LOCAL_CONFIG_PATH} isn't an object. Fix it or remove it, then run the command again.`,
+				`"environmentVariables" in .actor/actor.json isn't an object. Fix it or remove it, then run the command again.`,
 				CommandExitCodes.InvalidActorJson,
 			);
 		}
@@ -129,11 +129,11 @@ export class EnvMigrateCommand extends ApifyCommand<typeof EnvMigrateCommand> {
 		simpleLog({
 			message: [
 				names.length
-					? `Moving "environmentVariables" from ${LOCAL_CONFIG_PATH} to ${dotEnv.path}:`
-					: `"environmentVariables" in ${LOCAL_CONFIG_PATH} is empty, so no variables move to .env.`,
+					? `Moving "environmentVariables" from .actor/actor.json to ${dotEnv.path}:`
+					: '"environmentVariables" in .actor/actor.json is empty, so no variables move to .env.',
 				...lines,
 				...(gitignored ? [] : [`Adding .env to .gitignore.`]),
-				`Removing "environmentVariables" from ${LOCAL_CONFIG_PATH}.`,
+				'Removing "environmentVariables" from .actor/actor.json.',
 			].join('\n'),
 			stdout: true,
 		});
