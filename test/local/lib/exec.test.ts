@@ -35,3 +35,31 @@ describe('keepStdoutClean', () => {
 		expect(stdoutChunks.join('')).not.toContain('marker-from-child');
 	});
 });
+
+describe('execWithLog debug output', () => {
+	afterEach(() => {
+		vitest.unstubAllEnvs();
+		vitest.restoreAllMocks();
+	});
+
+	it('logs the names of the env vars, never their values', async () => {
+		vitest.stubEnv('APIFY_CLI_DEBUG', '1');
+		const output: string[] = [];
+		vitest.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+			output.push(args.map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg))).join(' '));
+		});
+		vitest.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+			output.push(String(chunk));
+			return true;
+		});
+
+		await execWithLog({
+			cmd: process.execPath,
+			args: ['-e', ''],
+			opts: { env: { ...process.env, DEBUG_SENTINEL_NAME: 's3cr3t-sentinel' } },
+		});
+
+		expect(output.join('\n')).toContain('DEBUG_SENTINEL_NAME');
+		expect(output.join('\n')).not.toContain('s3cr3t-sentinel');
+	});
+});
