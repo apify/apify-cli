@@ -46,6 +46,8 @@ describe('getActorLocalFilePaths - .env files (git)', () => {
 			// The Actor's own repository, so the ignore rules of this checkout don't apply.
 			execFileSync('git', ['init', '--quiet'], { cwd: joinPath(actor), stdio: 'ignore' });
 		}
+		// Git-ignored, as apify init and apify create set it up, so only the negation could bring them back.
+		writeFileSync(joinPath('negated', '.gitignore'), '.env\n.env.local\n');
 		writeFileSync(joinPath('negated', '.actorignore'), '!.env\n!.env.local\n');
 	});
 
@@ -57,7 +59,9 @@ describe('getActorLocalFilePaths - .env files (git)', () => {
 		const paths = await getActorLocalFilePaths(joinPath('plain'));
 
 		expect(paths).toEqual(expect.arrayContaining(['main.js', '.actor/actor.json', '.env.example']));
-		expect(paths.filter(isDotEnvFile)).toEqual([]);
+		for (const file of DOTENV_FILES) {
+			expect(paths).not.toContain(file);
+		}
 	});
 
 	it('leaves out .env files that .actorignore negates', async () => {
