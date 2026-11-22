@@ -33,5 +33,8 @@ export function readDotEnv(actorDir: string): DotEnvFile {
 		envFail(`Couldn't read ${path}: ${message}`);
 	}
 
+	// Editors on Windows can save a UTF-8 byte order mark, which parseEnv would keep as part of the first name.
+	content = content.replace(/^\uFEFF/, '');
+
 	return { path, exists: true, content, vars: { ...parseEnv(content) } as Record<string, string> };
 }

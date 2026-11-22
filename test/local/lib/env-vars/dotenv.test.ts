@@ -80,6 +80,10 @@ describe('readDotEnv', () => {
 		expect(read('A=one\r\nB=two\r\n').vars).toEqual({ A: 'one', B: 'two' });
 	});
 
+	it('ignores a UTF-8 byte order mark', () => {
+		expect(read('\uFEFFA=one\nB=two\n')).toMatchObject({ content: 'A=one\nB=two\n', vars: { A: 'one', B: 'two' } });
+	});
+
 	it('keeps @secret references literal', () => {
 		expect(read('TOKEN=@myToken\n').vars).toEqual({ TOKEN: '@myToken' });
 	});
