@@ -1,6 +1,6 @@
 ---
 name: apify-cli
-description: Patterns for invoking the Apify CLI (`apify`) from agents. Covers authentication, creating/running/pushing Actors, calling Actors in the cloud, and reading results from datasets and key-value stores.
+description: Patterns for invoking the Apify CLI (`apify`) from agents. Covers authentication, creating/running/pushing Actors, calling Actors in the cloud, managing Actor env vars with `.env` and `apify env`, and reading results from datasets and key-value stores.
 ---
 
 ## Start here
@@ -87,6 +87,17 @@ apify key-value-stores get-value <storeId> <key>
 apify key-value-stores set-value <storeId> <key> <value>
 apify key-value-stores keys <storeId> --json
 ```
+
+## Environment variables
+
+Env vars live in two places: a `.env` file in the Actor directory (next to `.actor/`) for local runs, and the Actor version on the platform for cloud runs. `apify push` never uploads `.env` and never changes platform env vars.
+
+- Local values go in `.env`, one `NAME=value` per line. `apify run` loads it, and `.env` wins over the shell and over the variables the CLI sets. `apify create` and `apify init` gitignore it.
+- Set a platform value with `apify env set NAME --secret`, feeding the value through stdin: `printf '%s' "$VALUE" | apify env set NAME --secret`. Use `--no-secret` for a plain value. To upload all of `.env`: `apify env push --yes` (new variables are secrets unless `--plain`; empty keys are skipped; `--prune` also deletes).
+- Check with `apify env ls --json` (secret values are never returned) and `apify env diff --json` (`inSync`, `onlyInDotEnv`, `onlyOnPlatform`, `valuesDiffer`; exits 1 on any difference, also with `--json`).
+- Never put a value in a command argument or in `.actor/actor.json`. `environmentVariables`, `@secret` references, and `apify secrets` are deprecated; `apify env migrate --yes` moves an existing `environmentVariables` block into `.env`, then run `apify env push`.
+- Runs use the env vars copied onto a build, so rebuild after any change: `apify builds create --version <version>`. If you then run `apify push` without changing local files, it refuses because the platform has newer changes; pass `--force`.
+- Target another Actor folder with `--dir <path>`, or an Actor without a local project with `--actor <ID or username/name>`. The version comes from `--version`, then `.actor/actor.json`, then `0.0`.
 
 ## Local Actor runtime
 
