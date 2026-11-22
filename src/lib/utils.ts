@@ -221,31 +221,24 @@ export const setLocalConfig = async (localConfig: Record<string, unknown>, actDi
 
 const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules', '.venv', '.env'];
 
-export const setLocalEnv = async (actDir: string) => {
-	// Create folders for emulation Apify stores
-	const keyValueStorePath = getLocalKeyValueStorePath();
-	ensureFolderExistsSync(actDir, getLocalDatasetPath());
-	ensureFolderExistsSync(actDir, getLocalRequestQueuePath());
-	ensureFolderExistsSync(actDir, keyValueStorePath);
-
-	// Create or update gitignore
-	const gitignorePath = join(actDir, '.gitignore');
+/**
+ * Appends the entries that aren't a line of `dir`'s .gitignore yet, and creates the file when it's missing. Returns the
+ * entries it added.
+ */
+export const ensureGitignoreEntries = (dir: string, entries: string[]): string[] => {
+	const gitignorePath = join(dir, '.gitignore');
 	let gitignoreContents = '';
 	if (existsSync(gitignorePath)) {
 		gitignoreContents = readFileSync(gitignorePath, { encoding: 'utf-8' });
 	}
 
-	const gitignoreAdditions = [];
-	for (const gitignoreRequirement of GITIGNORE_REQUIRED_CONTENTS) {
-		if (!RegExp(`^${escapeStringRegexp(gitignoreRequirement)}$`, 'mg').test(gitignoreContents)) {
-			gitignoreAdditions.push(gitignoreRequirement);
-		}
-	}
+	const gitignoreAdditions = entries.filter(
+		(entry) => !RegExp(`^${escapeStringRegexp(entry)}$`, 'mg').test(gitignoreContents),
+	);
 
 	if (gitignoreAdditions.length > 0) {
 		if (gitignoreContents.length > 0) {
-			gitignoreAdditions.unshift('# Added by Apify CLI');
-			writeFileSync(gitignorePath, `\n${gitignoreAdditions.join('\n')}\n`, {
+			writeFileSync(gitignorePath, `\n${['# Added by Apify CLI', ...gitignoreAdditions].join('\n')}\n`, {
 				flag: 'a',
 			});
 		} else {
@@ -254,6 +247,18 @@ export const setLocalEnv = async (actDir: string) => {
 			});
 		}
 	}
+
+	return gitignoreAdditions;
+};
+
+export const setLocalEnv = async (actDir: string) => {
+	// Create folders for emulation Apify stores
+	const keyValueStorePath = getLocalKeyValueStorePath();
+	ensureFolderExistsSync(actDir, getLocalDatasetPath());
+	ensureFolderExistsSync(actDir, getLocalRequestQueuePath());
+	ensureFolderExistsSync(actDir, keyValueStorePath);
+
+	ensureGitignoreEntries(actDir, GITIGNORE_REQUIRED_CONTENTS);
 };
 
 const mime = new Mime(standardMimes, otherMimes).define(
@@ -319,6 +324,13 @@ const gitOutput = (args: string, cwd: string, input?: string): string | null => 
 		return null;
 	}
 };
+
+/**
+ * True when git tracks `relPath` in `dir`. False outside a Git repository or when git fails. A .gitignore line doesn't
+ * untrack a committed file.
+ */
+export const isTrackedByGit = (dir: string, relPath: string): boolean =>
+	Boolean(gitOutput(`ls-files -z -- "${relPath}"`, dir)?.split('\0').some(Boolean));
 
 const readFileOrEmpty = async (path: string) => readFile(path, 'utf-8').catch(() => '');
 

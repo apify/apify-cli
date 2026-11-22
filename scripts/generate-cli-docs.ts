@@ -70,6 +70,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.envSet },
 		{ command: Commands.envRm },
 		{ command: Commands.envPush },
+		{ command: Commands.envPull },
 	],
 	'actor-build': [
 		//

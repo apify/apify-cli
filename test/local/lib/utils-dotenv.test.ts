@@ -1,8 +1,15 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 
-import { getActorLocalFilePaths, isDotEnvFile } from '../../../src/lib/utils.js';
+import {
+	ensureGitignoreEntries,
+	getActorLocalFilePaths,
+	isDotEnvFile,
+	isTrackedByGit,
+	setLocalEnv,
+} from '../../../src/lib/utils.js';
 import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
@@ -70,5 +77,74 @@ describe('getActorLocalFilePaths - .env files (git)', () => {
 		expect(paths).toContain('main.js');
 		expect(paths).not.toContain('.env');
 		expect(paths).not.toContain('.env.local');
+	});
+});
+
+describe('ensureGitignoreEntries', () => {
+	let dir: string;
+
+	beforeEach(() => {
+		dir = mkdtempSync(join(tmpdir(), 'gitignore-entries-test-'));
+	});
+
+	afterEach(() => {
+		rmSync(dir, { recursive: true, force: true });
+	});
+
+	const gitignore = () => readFileSync(join(dir, '.gitignore'), 'utf8');
+
+	it('creates .gitignore with the entries', () => {
+		expect(ensureGitignoreEntries(dir, ['.env', 'node_modules'])).toEqual(['.env', 'node_modules']);
+		expect(gitignore()).toBe('.env\nnode_modules\n');
+	});
+
+	it('appends only the missing entries, once', () => {
+		writeFileSync(join(dir, '.gitignore'), 'node_modules\n.env.local\n');
+
+		expect(ensureGitignoreEntries(dir, ['node_modules', '.env'])).toEqual(['.env']);
+		expect(ensureGitignoreEntries(dir, ['node_modules', '.env'])).toEqual([]);
+		expect(gitignore()).toBe('node_modules\n.env.local\n\n# Added by Apify CLI\n.env\n');
+	});
+
+	it('leaves setLocalEnv adding the required entries once', async () => {
+		writeFileSync(join(dir, '.gitignore'), 'node_modules\n');
+
+		await setLocalEnv(dir);
+		await setLocalEnv(dir);
+
+		expect(gitignore()).toBe('node_modules\n\n# Added by Apify CLI\nstorage\n.venv\n.env\n');
+	});
+});
+
+describe('isTrackedByGit', () => {
+	let dir: string;
+
+	beforeEach(() => {
+		dir = mkdtempSync(join(tmpdir(), 'tracked-by-git-test-'));
+		writeFileSync(join(dir, '.env'), 'A=1\n');
+		writeFileSync(join(dir, 'other.txt'), 'x\n');
+	});
+
+	afterEach(() => {
+		rmSync(dir, { recursive: true, force: true });
+	});
+
+	const git = (...args: string[]) =>
+		execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', ...args], {
+			cwd: dir,
+			stdio: 'ignore',
+		});
+
+	it('is true for a committed file and false for an untracked one', () => {
+		git('init', '--quiet');
+		git('add', '.env');
+		git('commit', '--quiet', '-m', 'init');
+
+		expect(isTrackedByGit(dir, '.env')).toBe(true);
+		expect(isTrackedByGit(dir, 'other.txt')).toBe(false);
+	});
+
+	it('is false outside Git', () => {
+		expect(isTrackedByGit(dir, '.env')).toBe(false);
 	});
 });
