@@ -1,4 +1,4 @@
-import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../consts.js';
+import { CommandExitCodes } from '../consts.js';
 import { envFail } from './errors.js';
 
 /** A string value that refers to a secret in the local secrets store: `@` and the secret's name. */
@@ -26,7 +26,7 @@ export function hasLegacyEnvVars(config: Record<string, unknown> | undefined): b
 export function assertNoLegacyEnvVars(config: Record<string, unknown> | undefined): void {
 	if (hasLegacyEnvVars(config)) {
 		envFail(
-			`"environmentVariables" in ${LOCAL_CONFIG_PATH} is no longer supported. Run apify env migrate to move the values to .env.`,
+			'"environmentVariables" in .actor/actor.json is no longer supported. Run apify env migrate to move the values to .env.',
 			CommandExitCodes.InvalidActorJson,
 		);
 	}

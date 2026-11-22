@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import process from 'node:process';
 
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
@@ -8,7 +9,7 @@ import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS, STORAGE_GENERAL_ACCESS } from 
 import { createHmacSignature } from '@apify/utilities';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../../src/lib/utils.js';
 import { testUserClient } from '../../__setup__/config.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
@@ -253,6 +254,8 @@ describe('[api] apify push', () => {
 					flags_force: true,
 				});
 
+				expect(process.exitCode).to.be.eql(CommandExitCodes.InvalidActorJson);
+
 				const versionAfter = await testActorClient.version(actorJson.version).get();
 				const envVarsAfter = await testActorClient.version(actorJson.version).envVars().list();
 
@@ -267,6 +270,7 @@ describe('[api] apify push', () => {
 				// eslint-disable-next-line dot-notation
 				expect(pushInstance['telemetryData'].push).to.be.eql({ envVarsCount: 3, secretRefsCount: 1 });
 			} finally {
+				process.exitCode = undefined;
 				actorJson.environmentVariables = originalEnvironmentVariables;
 				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 				await testActorClient.delete();
