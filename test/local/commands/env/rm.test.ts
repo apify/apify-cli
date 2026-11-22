@@ -121,7 +121,9 @@ describe('apify env rm', () => {
 		await testRunCommand(EnvRmCommand, { args_name: 'API_KEY', flags_dir: actorDir });
 
 		expect(process.exitCode).toBe(1);
-		expect(logMessages.error.join('\n')).toContain('To delete without a prompt, pass --yes.');
+		expect(logMessages.error.join('\n')).toContain(
+			'apify env rm asks before it deletes anything. To delete without a prompt, pass --yes.',
+		);
 		expect(envPlatform.writes).toEqual([]);
 	});
 
