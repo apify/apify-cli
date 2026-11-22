@@ -282,6 +282,55 @@ describe('apify env push', () => {
 		expectNoValues(instance);
 	});
 
+	it('prints only the error message of a failed write, never the request body', async () => {
+		writeDotEnv(`NEW_VAR=${NEW_SECRET_VALUE}\n`);
+		const networkError = Object.assign(new Error('Network Error'), {
+			config: { data: JSON.stringify({ name: 'NEW_VAR', value: NEW_SECRET_VALUE, isSecret: true }) },
+		});
+		envPlatform.failNext('create', 'NEW_VAR', networkError);
+
+		const instance = await testRunCommand(EnvPushCommand, {
+			flags_dir: actorDir,
+			flags_yes: true,
+			flags_json: true,
+		});
+
+		expect(process.exitCode).toBe(1);
+		expect(stderr()).toContain("Couldn't add NEW_VAR: Network Error");
+		expect(JSON.parse(stdout()).changes).toContainEqual({
+			name: 'NEW_VAR',
+			action: 'add',
+			isSecret: true,
+			result: 'failed',
+			error: 'Network Error',
+		});
+		expect(stderr()).not.toContain('Rebuild the Actor');
+		expectNoValues(instance);
+	});
+
+	it('prints the plan to stderr and only JSON on stdout with --json and a prompt', async () => {
+		writeDotEnv(`NEW_VAR=${NEW_SECRET_VALUE}\n`);
+		yesNoConfirm.mockResolvedValueOnce(false);
+
+		await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_json: true });
+
+		expect(stderr()).toContain('+ NEW_VAR (secret)');
+		expect(stderr()).toContain('Nothing was pushed.');
+		expect(JSON.parse(stdout())).toMatchObject({ ok: true, confirmed: false });
+		expect(envPlatform.writes).toEqual([]);
+	});
+
+	it('fails on a value that is too long before any write, without printing it', async () => {
+		writeDotEnv(`NEW_VAR=x\nLONG=${NEW_SECRET_VALUE.repeat(3000)}\n`);
+
+		const instance = await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_yes: true });
+
+		expect(process.exitCode).toBe(5);
+		expect(stderr()).toContain('The value of LONG is longer than 50000 characters.');
+		expect(envPlatform.writes).toEqual([]);
+		expectNoValues(instance);
+	});
+
 	it('prints only JSON on stdout with --json and --yes', async () => {
 		writeDotEnv(`NEW_VAR=${NEW_SECRET_VALUE}\n`);
 
