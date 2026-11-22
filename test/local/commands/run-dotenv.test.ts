@@ -1,7 +1,9 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import process from 'node:process';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { getLocalDatasetPath } from '../../../src/lib/utils.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
@@ -19,7 +21,7 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 	cwdParent: true,
 });
 
-useConsoleSpy();
+const { logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { RunCommand } = await import('../../../src/commands/run.js');
@@ -68,6 +70,7 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 
 	afterEach(() => {
 		vitest.unstubAllEnvs();
+		process.exitCode = undefined;
 	});
 
 	const setEnvironmentVariables = (environmentVariables: Record<string, string>) => {
@@ -123,4 +126,22 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 
 		expect((await runAndReadEnv()).SECRET_REF).toBe('@foo');
 	});
+
+	it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+		'stops before purging storage when .env cannot be read',
+		async () => {
+			const datasetItem = joinPath(getLocalDatasetPath(), '000000001.json');
+			mkdirSync(joinPath(getLocalDatasetPath()), { recursive: true });
+			writeFileSync(datasetItem, '{}');
+			writeFileSync(joinPath('.env'), 'A=one\n');
+			chmodSync(joinPath('.env'), 0o000);
+
+			await testRunCommand(RunCommand, { flags_purge: true });
+
+			// The exit code is checked in dotenv.test.ts: useTempPath mocks node:process, so this file can't see it.
+			expect(logMessages.error.join('\n')).toContain(`Couldn't read ${joinPath('.env')}`);
+			expect(existsSync(resultPath)).toBe(false);
+			expect(existsSync(datasetItem)).toBe(true);
+		},
+	);
 });

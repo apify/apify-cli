@@ -234,6 +234,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const { config: localConfig } = localConfigResult.unwrap();
 
+		// Read .env before purging storage or writing input, so an unreadable file stops the run with nothing changed.
+		const dotEnvVars = readDotEnv(cwd).vars;
+		cliDebugPrint('[run] loaded .env', { keys: Object.keys(dotEnvVars).length });
+
 		if (localConfig!.usesStandbyMode && !this.flags.server) {
 			info({
 				message:
@@ -432,8 +436,6 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			Object.assign(localEnvVars, updatedEnv);
 		}
 
-		const dotEnvVars = readDotEnv(cwd).vars;
-		cliDebugPrint('[run] loaded .env', { keys: Object.keys(dotEnvVars).length });
 		Object.assign(localEnvVars, dotEnvVars);
 
 		// localEnvVars must take priority so the CLI can redirect the SDK to temp input files
