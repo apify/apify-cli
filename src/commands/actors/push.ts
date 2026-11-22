@@ -442,7 +442,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; ` +
 		`larger projects upload as ZIP file.\n` +
 		`Files matched by .gitignore and .actorignore are excluded. ` +
-		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.\n` +
+		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files. ` +
+		`.env and .env.* files are never uploaded, except .env.example.\n` +
 		`If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push uploads the whole Git repository: ` +
 		`the Actor folder as above, and everything else that Git tracks or doesn't ignore (.actorignore doesn't apply there). ` +
 		`Outside Git, it uploads the whole Docker context as above.\n` +

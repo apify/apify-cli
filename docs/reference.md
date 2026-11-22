@@ -1040,7 +1040,8 @@ DESCRIPTION
   Files under '3' MB upload as "Multiple source files"; larger projects upload 
   as ZIP file.
   Files matched by .gitignore and .actorignore are excluded. Use negation 
-  patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.
+  patterns (e.g. !dist/) in .actorignore to force-include git-ignored files. 
+  .env and .env.* files are never uploaded, except .env.example.
   If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push 
   uploads the whole Git repository: the Actor folder as above, and everything 
   else that Git tracks or doesn't ignore (.actorignore doesn't apply there). 

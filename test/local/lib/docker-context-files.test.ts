@@ -3,6 +3,7 @@ import { mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { getContextFilePaths } from '../../../src/lib/docker-context.js';
+import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 // vi.mock is hoisted before imports, so both the context collector and utils.ts get the mocked version. With
@@ -107,6 +108,54 @@ describe('getContextFilePaths', () => {
 
 		it('keeps a symlink, as a Git clone does', async () => {
 			expect(await getContextFilePaths(tmpPath)).toContain(`${ACTOR_PATH}/shared`);
+		});
+	});
+
+	describe('with .env files', () => {
+		// A global excludes file often lists .env, which would hide the untracked ones from the list anyway.
+		useIsolatedGit('docker-context-files-dotenv-git-home');
+		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-files-dotenv-dir', {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
+		});
+
+		const write = (relativePath: string) => {
+			mkdirSync(dirname(joinPath(relativePath)), { recursive: true });
+			writeFileSync(joinPath(relativePath), 'A=1\n');
+		};
+		const git = (...args: string[]) =>
+			execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', ...args], {
+				cwd: tmpPath,
+				stdio: 'ignore',
+			});
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+
+			for (const file of ['package.json', '.env', '.env.production', '.env.example', `${ACTOR_PATH}/.env`]) {
+				write(file);
+			}
+			git('init', '--quiet');
+			git('add', '.');
+			git('commit', '--quiet', '-m', 'init');
+
+			for (const file of ['.env.local', `${ACTOR_PATH}/.actor/.env`, `${ACTOR_PATH}/main.js`]) {
+				write(file);
+			}
+		});
+
+		afterAll(async () => {
+			await afterAllCalls();
+		});
+
+		it('leaves out tracked and untracked .env files, but keeps .env.example', async () => {
+			expect((await getContextFilePaths(tmpPath)).sort()).toEqual([
+				'.env.example',
+				`${ACTOR_PATH}/main.js`,
+				'package.json',
+			]);
 		});
 	});
 
