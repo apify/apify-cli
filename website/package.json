@@ -22,7 +22,7 @@
 		"rimraf": "^6.1.4"
 	},
 	"dependencies": {
-		"@apify/docs-theme": "^1.0.285",
+		"@apify/docs-theme": "^1.0.288",
 		"@docusaurus/core": "^3.10.2",
 		"@docusaurus/faster": "^3.10.2",
 		"@docusaurus/plugin-client-redirects": "^3.10.2",
@@ -37,7 +37,7 @@
 		"unist-util-visit": "^5.2.0"
 	},
 	"volta": {
-		"node": "24.22.1",
+		"node": "26.13.1",
 		"pnpm": "12.14.0"
 	},
 	"packageManager": "pnpm@12.14.0"

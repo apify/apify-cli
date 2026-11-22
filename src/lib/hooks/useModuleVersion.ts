@@ -59,22 +59,22 @@ const moduleVersionScripts: Record<string, (mod: string) => string[]> = {
 	node(mod) {
 		const script = jsScript(mod);
 
-		return ['-e', `"${script}"`];
+		return ['-e', script];
 	},
 	deno(mod) {
 		const script = jsScript(mod);
 
-		return ['eval', `"${script}"`];
+		return ['eval', script];
 	},
 	bun(mod) {
 		const script = jsScript(mod);
 
-		return ['--eval', `"${script}"`];
+		return ['--eval', script];
 	},
 	python(mod) {
 		const script = pyScript(mod);
 
-		return ['-c', `"${script}"`];
+		return ['-c', script];
 	},
 };
 
@@ -105,7 +105,6 @@ export async function useModuleVersion({ moduleName, project }: UseModuleVersion
 	try {
 		const result = await execa(project.runtime.executablePath, args, {
 			cwd: process.cwd(),
-			shell: true,
 			windowsHide: true,
 			verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 		});

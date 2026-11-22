@@ -10,20 +10,22 @@ jobs:
     build:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
 
-        environment:
-            name: github-pages
-
         permissions:
-            contents: write
-            pages: write
-            id-token: write
+            contents: read
 
         runs-on: ubuntu-latest
+
+        outputs:
+            sha: ${{ steps.sha.outputs.sha }}
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
-                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+                  persist-credentials: false
+
+            - name: Record the built commit
+              id: sha
+              run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
             - name: Use Node.js
               uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -41,25 +43,72 @@ jobs:
                   pnpm --filter apify-cli-website run build
               env:
                   SMARTLOOK_PROJECT_KEY: ${{ secrets.SMARTLOOK_DOCS_PROJECT_KEY }}
-                  GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
-                  GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
                   APIFY_SIGNING_TOKEN: ${{ secrets.APIFY_SIGNING_TOKEN }}
                   SEGMENT_TOKEN: ${{ secrets.SEGMENT_TOKEN }}
+
+            - name: Upload the updated package.json and lockfile
+              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              with:
+                  name: docs-theme-update
+                  path: |
+                      website/package.json
+                      pnpm-lock.yaml
+                  retention-days: 1
+
+            - name: Upload GitHub Pages artifact
+              uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+              with:
+                  path: ./website/build
+
+    # The service account token is only used in jobs that do not run the docs toolchain.
+    commit:
+        needs: build
+
+        permissions:
+            contents: read
+
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+
+            # Start from the commit the update was made on, so the pull below merges it with anything pushed since.
+            - name: Reset to the built commit
+              run: git reset --hard "$BUILT_SHA"
+              env:
+                  BUILT_SHA: ${{ needs.build.outputs.sha }}
+
+            - name: Download the updated package.json and lockfile
+              uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+              with:
+                  name: docs-theme-update
 
             - name: Commit the updated package(-lock).json
               uses: apify/actions/signed-commit@v1.6.2
               with:
                   message: "chore: Automatic theme updating workflow [skip ci]"
                   add: 'website/package.json pnpm-lock.yaml'
+                  pull: '--rebase --autostash'
                   github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
+    deploy:
+        needs: build
+
+        environment:
+            name: github-pages
+
+        permissions:
+            pages: write
+            id-token: write
+
+        runs-on: ubuntu-latest
+
+        steps:
             - name: Set up GitHub Pages
               uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-
-            - name: Upload GitHub Pages artifact
-              uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-              with:
-                  path: ./website/build
 
             - name: Deploy artifact to GitHub Pages
               uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -78,14 +78,14 @@ FLAGS
                           Leading slashes and a version prefix in the path are
                           optional. For example, "actor-runs/{runId}" and
                           "/v2/actor-runs/{runId}" are both accepted.
-      -H, --header=<value>    Additional HTTP header(s). Pass a
+  -H, --header=<value>    Additional HTTP header(s). Pass a
                           single "key:value" string, or a JSON object like
                           '{"X-Foo": "bar", "X-Baz": "qux"}' to send multiple
                           headers. The flag can only be used once; use the JSON form
                           for multiple headers.
   -l, --list-endpoints    List all available Apify API
                           endpoints.
-      -X, --method=<option>   The HTTP method to use. Defaults
+  -X, --method=<option>   The HTTP method to use. Defaults
                           to GET.
                           <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>    Query parameters as a JSON object,
@@ -533,6 +533,180 @@ ARGUMENTS
         validates all schemas in '.actor/actor.json'.
 ```
 
+##### `apify runtime`
+
+```sh
+DESCRIPTION
+  Manages the Actor runtime, a self-contained local Apify platform running as a 
+  container on Docker or Podman.
+  For setup and usage, see https://docs.apify.com/cli/docs/actor-runtime.
+
+  NOTE: This command is experimental and might change in future releases.
+
+SUBCOMMANDS
+  runtime install     Installs the Actor runtime: verifies
+                      your machine has a working container engine (Docker or
+                      Podman) and downloads the Actor runtime image.
+  runtime start       Starts the Actor runtime, a local Apify
+                      platform running as a container on Docker or Podman.
+  runtime stop        Stops the Actor runtime container
+                      started with 'apify runtime start --detach'.
+  runtime status      Prints whether the Actor runtime is
+                      running, the ports it publishes, the host directory it keeps
+                      its data in, and which API the Apify CLI currently talks to.
+  runtime connect     Sends all Apify CLI commands to the
+                      local Actor runtime instead of the Apify platform. Applies
+                      in every terminal until you run 'apify runtime disconnect'.
+                      Your login stays the same.
+  runtime disconnect  Disconnects the Apify CLI from the local
+                      Actor runtime, so commands go to the Apify platform again.
+                      In a shell where APIFY_CLIENT_BASE_URL or APIFY_CONSOLE_URL
+                      is set, those still apply.
+  runtime skill       Prints the Agent Skill that teaches
+                      coding agents how to use the Actor runtime.
+```
+
+##### `apify runtime install`
+
+```sh
+DESCRIPTION
+  Installs the Actor runtime: verifies your machine has a working container 
+  engine (Docker or Podman) and downloads the Actor runtime image.
+  Tagged images are always re-checked against the registry, so an outdated local
+   copy gets updated.
+  'apify runtime start' then runs the image installed last.
+  Requires Docker or Podman. For installation steps, see 
+  https://docs.docker.com/get-started/get-docker/ or 
+  https://podman.io/docs/installation.
+
+  NOTE: This command is experimental and might change in future releases.
+
+USAGE
+  $ apify runtime install [image] [-f]
+
+ARGUMENTS
+  image  Container image to install as the Actor runtime. Defaults to
+         'apify/actor-runtime:latest'.
+
+FLAGS
+  -f, --force  Re-download the Actor runtime image even if it's already
+               present.
+```
+
+##### `apify runtime start`
+
+```sh
+DESCRIPTION
+  Starts the Actor runtime, a local Apify platform running as a container on 
+  Docker or Podman.
+  If the runtime isn't installed yet, installs it first.
+  By default, the API runs on http://localhost:3333/ and the Console on 
+  http://localhost:3000/. Use --api-port and --console-port to change them.
+  To send CLI commands to the runtime, run 'apify runtime connect'.
+
+  NOTE: This command is experimental and might change in future releases.
+
+USAGE
+  $ apify runtime start [--api-port <value>]
+                        [--console-port <value>] [--data-dir <value>] [-d]
+
+FLAGS
+      --api-port=<value>      Host port for the runtime API.
+                              Defaults to the port of the previous start, else 3333.
+      --console-port=<value>  Host port for the runtime
+                              console. Defaults to the port of the previous start,
+                              else 3000.
+      --data-dir=<value>      Host directory mounted as the
+                              runtime data directory (storages, builds and run
+                              records). Defaults to ~/.apify/actor-runtime/data.
+  -d, --detach                Run the runtime container
+                              in the background. Stop it with 'apify runtime stop'.
+```
+
+##### `apify runtime stop`
+
+```sh
+DESCRIPTION
+  Stops the Actor runtime container started with 'apify runtime start --detach'.
+
+  NOTE: This command is experimental and might change in future releases.
+
+USAGE
+  $ apify runtime stop
+```
+
+##### `apify runtime status`
+
+```sh
+DESCRIPTION
+  Prints whether the Actor runtime is running, the ports it publishes, the host 
+  directory it keeps its data in, and which API the Apify CLI currently talks 
+  to.
+  Exits with code 1 when the runtime isn't running, so scripts can test for it.
+
+  NOTE: This command is experimental and might change in future releases.
+
+USAGE
+  $ apify runtime status [--json]
+
+FLAGS
+      --json  Format the command output as JSON.
+```
+
+##### `apify runtime connect`
+
+```sh
+DESCRIPTION
+  Sends all Apify CLI commands to the local Actor runtime instead of the Apify 
+  platform. Applies in every terminal until you run 'apify runtime disconnect'. 
+  Your login stays the same.
+  In a shell where APIFY_CLIENT_BASE_URL or APIFY_CONSOLE_URL is set, those 
+  variables override this setting.
+
+  NOTE: This command is experimental and might change in future releases.
+
+USAGE
+  $ apify runtime connect
+```
+
+##### `apify runtime disconnect`
+
+```sh
+DESCRIPTION
+  Disconnects the Apify CLI from the local Actor runtime, so commands go to the 
+  Apify platform again. In a shell where APIFY_CLIENT_BASE_URL or 
+  APIFY_CONSOLE_URL is set, those still apply.
+  The runtime keeps running. To stop it, run 'apify runtime stop'.
+
+  NOTE: This command is experimental and might change in future releases.
+
+USAGE
+  $ apify runtime disconnect
+```
+
+##### `apify runtime skill`
+
+```sh
+DESCRIPTION
+  Prints the Agent Skill that teaches coding agents how to use the Actor 
+  runtime.
+  The skill comes with the runtime image, so it always matches the version you 
+  have installed. The runtime doesn't need to be running.
+  To keep the skill available to your agents in later sessions, use --install. 
+  It writes the skill to every agent skills directory it finds.
+
+  NOTE: This command is experimental and might change in future releases.
+
+USAGE
+  $ apify runtime skill [--install] [--raw]
+
+FLAGS
+      --install  Write the skill into every agent skills directory found,
+                 instead of printing it.
+      --raw      Print the file exactly as it ships, frontmatter and all,
+                 with no added header.
+```
+
 ##### `apify actor`
 
 ```sh
@@ -965,7 +1139,7 @@ DESCRIPTION
   info <actor> --input".
 
 USAGE
-  $ apify actors call [actorId] [-b <value>]
+  $ apify actors call [actorId] [-b <value>] [--dev-folder]
                       [-i <value> | -f <value>] [--json] [-m <value>] [-o]
                       [--profile <value>] [-s] [-t <value>]
 
@@ -978,6 +1152,12 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>       Tag or number of the build to
                             run (e.g. "latest" or "1.2.34").
+      --dev-folder          Experimental, local Actor runtime
+                            only: mount the Actor's registered live dev folder into
+                            the run, so it picks up local edits (the default). Use
+                            --no-dev-folder to run from the built image alone this
+                            once; the registration itself stays. Ignored when
+                            calling on the Apify platform.
   -i, --input=<value>       Optional inline JSON object
                             input for the Actor. To avoid shell parsing issues, wrap
                             the JSON in quotes. For JSON files, use --input-file.

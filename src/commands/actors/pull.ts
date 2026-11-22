@@ -1,5 +1,5 @@
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 
 import { downloadTemplate } from 'giget';
@@ -10,6 +10,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { parseGitRepoUrl, withAllowedGitProtocols } from '../../lib/git-repo-url.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
 import { downloadZip, getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
@@ -155,22 +156,37 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 					throwMissingSourceCodeAccessError();
 				}
 
+				const root = resolve(dirpath);
 				const { sourceFiles } = correctVersion;
-				for (const file of sourceFiles) {
-					const folderPath = dirname(file.name);
-					mkdirSync(`${dirpath}/${folderPath}`, { recursive: true });
+
+				// Validate every name first, so a rejected Actor leaves no partial checkout.
+				const files = sourceFiles.map((file) => {
+					const target = resolve(root, file.name);
+					const rel = relative(root, target);
+
+					if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+						throw new Error(
+							`Cannot pull Actor: source file "${file.name}" would be written outside the target directory.`,
+						);
+					}
+
+					return { file, target };
+				});
+
+				for (const { file, target } of files) {
+					mkdirSync(dirname(target), { recursive: true });
 
 					// @ts-expect-error TODO: is this an actual field?
 					if (!file.folder) {
 						const fileContent =
 							file.format === 'BASE64' ? Buffer.from(file.content, 'base64').toString() : file.content;
 
-						if (file.name === LOCAL_CONFIG_PATH) {
+						if (target === join(root, LOCAL_CONFIG_PATH)) {
 							const actorJson = jju.parse(fileContent);
 							actorJson.name = actor.name;
-							writeFileSync(`${dirpath}/${file.name}`, jju.update(fileContent, actorJson));
+							writeFileSync(target, jju.update(fileContent, actorJson));
 						} else {
-							writeFileSync(`${dirpath}/${file.name}`, fileContent);
+							writeFileSync(target, fileContent);
 						}
 					}
 				}
@@ -185,9 +201,11 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 				const { gitRepoUrl } = correctVersion;
 
+				parseGitRepoUrl(gitRepoUrl);
+
 				// giget's git: provider parses `<url>#<branch>:<subdir>` natively, matching gitRepoUrl.
 				try {
-					await downloadTemplate(`git:${gitRepoUrl}`, { dir: dirpath });
+					await withAllowedGitProtocols(async () => downloadTemplate(`git:${gitRepoUrl}`, { dir: dirpath }));
 				} catch (err) {
 					throw new Error(`Failed to pull Actor from ${gitRepoUrl}. ${(err as Error).message}`);
 				}

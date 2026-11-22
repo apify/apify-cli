@@ -85,14 +85,16 @@ export function buildNextSteps(params: {
 	actorName: string;
 	dependenciesInstalled: boolean;
 	installCommandSuggestion?: string | null;
+	/** A Server Actor serves HTTP, so a plain `apify run` gives the wrong interface. */
+	usesStandbyMode?: boolean;
 }): string[] {
-	const { actorName, dependenciesInstalled, installCommandSuggestion } = params;
+	const { actorName, dependenciesInstalled, installCommandSuggestion, usesStandbyMode } = params;
 
 	const steps = [`cd "${actorName}"`];
 	if (!dependenciesInstalled) {
 		steps.push(installCommandSuggestion || 'install dependencies with your package manager');
 	}
-	steps.push('apify run');
+	steps.push(usesStandbyMode ? 'apify run --server' : 'apify run');
 
 	return steps;
 }
@@ -103,6 +105,7 @@ export function formatCreateSuccessMessage(params: {
 	postCreate?: string | null;
 	gitRepositoryInitialized?: boolean;
 	installCommandSuggestion?: string | null;
+	usesStandbyMode?: boolean;
 	/** Set once the Actor is wired to a Git remote, which changes how it gets deployed. */
 	gitRemote?: { remoteUrl: string; actorId: string; automaticBuilds: AutomaticBuilds } | null;
 }) {
@@ -112,12 +115,13 @@ export function formatCreateSuccessMessage(params: {
 		postCreate,
 		gitRepositoryInitialized,
 		installCommandSuggestion,
+		usesStandbyMode,
 		gitRemote,
 	} = params;
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
-	const nextSteps = buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
+	const nextSteps = buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion, usesStandbyMode });
 	message += `\n\nNext steps:\n\n${nextSteps.join('\n')}`;
 
 	if (gitRemote) {
