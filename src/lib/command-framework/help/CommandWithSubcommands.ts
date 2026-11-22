@@ -1,31 +1,16 @@
 /*
-Manages secure environment variables for Actors.
-
-USAGE
-  $ apify secrets
+Manage the environment variables of an Actor version on the Apify platform, and keep them in sync with a local .env file.
 
 DESCRIPTION
-  Manages secure environment variables for Actors.
+  Manage the environment variables of an Actor version on the Apify platform, and keep them in sync with a local .env
+  file. Changes need a rebuild before runs see them.
 
-  Example:
-  $ apify secrets add mySecret TopSecretValue123
+SUBCOMMANDS
+  env ls       Lists the env vars of an Actor version on the Apify platform. Secret values stay hidden.
+  env rm       Deletes an env var from an Actor version.
 
-  The "mySecret" value can be used in an environment variable defined in '.actor/actor.json' file by adding the "@"
-  prefix:
-
-  {
-  "actorSpecification": 1,
-  "name": "my_actor",
-  "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },
-  "version": "0.1"
-  }
-
-  When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
-  of the Actor.
-
-COMMANDS
-  secrets add  Adds a new secret to '~/.apify' for use in Actor environment variables.
-  secrets rm   Permanently deletes a secret from your stored credentials.
+LEARN MORE
+  https://docs.apify.com/cli/docs/reference#apify-env
 */
 
 import chalk from 'chalk';

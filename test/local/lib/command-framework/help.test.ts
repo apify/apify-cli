@@ -2,8 +2,6 @@
 import stripAnsi from 'strip-ansi';
 
 import { RuntimeIndexCommand } from '../../../../src/commands/runtime/_index.js';
-import { SecretsIndexCommand } from '../../../../src/commands/secrets/_index.js';
-import { SecretsAddCommand } from '../../../../src/commands/secrets/add.js';
 import {
 	ApifyCommand,
 	type BuiltApifyCommand as _BuiltApifyCommand,
@@ -97,6 +95,18 @@ class FakeInteractiveNamespace extends BuiltApifyCommand {
 	];
 }
 
+class FakeDeprecatedAdd extends BuiltApifyCommand {
+	static override name = 'add' as const;
+	static override description = 'Deprecated: use the new commands instead. Adds a thing.';
+}
+
+class FakeDeprecatedNamespace extends BuiltApifyCommand {
+	static override name = 'things' as const;
+	static override description = 'Deprecated: use the new commands instead. Manages things.';
+	static override deprecated = true;
+	static override subcommands = [FakeDeprecatedAdd];
+}
+
 describe('Help rendering', () => {
 	let existingCommands: [string, typeof _BuiltApifyCommand][];
 
@@ -110,7 +120,7 @@ describe('Help rendering', () => {
 		registerCommandForHelpGeneration('apify', FakeUtility);
 		registerCommandForHelpGeneration('apify', FakeInteractiveNamespace);
 		registerCommandForHelpGeneration('apify', RuntimeIndexCommand);
-		registerCommandForHelpGeneration('apify', SecretsIndexCommand);
+		registerCommandForHelpGeneration('apify', FakeDeprecatedNamespace);
 
 		// The `actor push-data` subcommand is registered twice with different entrypoints,
 		// once as a subcommand of `apify actor` and once as a standalone `actor` command.
@@ -202,28 +212,13 @@ describe('Help rendering', () => {
 		});
 	});
 
-	describe('apify secrets help', () => {
+	describe('deprecated namespace help', () => {
 		it('is labelled deprecated, in its own help, its subcommands, and the main menu', () => {
-			expect(stripAnsi(renderHelpForCommand(SecretsIndexCommand)).startsWith('[DEPRECATED] Deprecated: use .env')).toBe(
+			expect(stripAnsi(renderHelpForCommand(FakeDeprecatedNamespace)).startsWith('[DEPRECATED] Deprecated: ')).toBe(
 				true,
 			);
-			expect(stripAnsi(renderHelpForCommand(SecretsAddCommand)).startsWith('[DEPRECATED] ')).toBe(true);
-			expect(stripAnsi(renderMainHelpMenu('apify'))).toMatch(/secrets\s+\[DEPRECATED\] Deprecated: use \.env/);
-
-			for (const subcommand of SecretsIndexCommand.subcommands!) {
-				expect(stripAnsi(renderHelpForCommand(subcommand)).startsWith('[DEPRECATED] Deprecated: ')).toBe(true);
-			}
-		});
-
-		it('labels every subcommand deprecated in the SUBCOMMANDS list through its description', () => {
-			const subcommandLines = stripAnsi(renderHelpForCommand(SecretsIndexCommand))
-				.split('\n')
-				.filter((line) => /^\s+secrets (add|ls|rm)\s/.test(line));
-
-			expect(subcommandLines).toHaveLength(3);
-			for (const line of subcommandLines) {
-				expect(line).toContain('Deprecated: use .env and apify env instead.');
-			}
+			expect(stripAnsi(renderHelpForCommand(FakeDeprecatedAdd)).startsWith('[DEPRECATED] Deprecated: ')).toBe(true);
+			expect(stripAnsi(renderMainHelpMenu('apify'))).toMatch(/things\s+\[DEPRECATED\] Deprecated: use the new/);
 		});
 	});
 

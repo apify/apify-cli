@@ -4,7 +4,7 @@ import { dirname } from 'node:path';
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { DOTENV_FILE_NAME, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { getSecret, type SecretKind } from '../../../src/lib/credentials.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
 import {
@@ -100,7 +100,7 @@ describe('apify run', () => {
 		expect(actOutput).toStrictEqual(expectOutput);
 	});
 
-	it(`[api] run with env vars from "${LOCAL_CONFIG_PATH}"`, async () => {
+	it(`[api] run with env vars from "${DOTENV_FILE_NAME}"`, async () => {
 		const testEnvVars = {
 			TEST_LOCAL: 'testValue',
 		};
@@ -119,8 +119,8 @@ describe('apify run', () => {
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
 		const apifyJson = EMPTY_LOCAL_CONFIG;
-		apifyJson.environmentVariables = testEnvVars;
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
+		writeFileSync(joinPath(DOTENV_FILE_NAME), 'TEST_LOCAL=testValue\n', { flag: 'w' });
 
 		await testRunCommand(RunCommand, {});
 
@@ -135,7 +135,7 @@ describe('apify run', () => {
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
 	});
 
-	it(`[api] run with env vars from "${LOCAL_CONFIG_PATH}" and custom script`, async () => {
+	it(`[api] run with env vars from "${DOTENV_FILE_NAME}" and custom script`, async () => {
 		const testEnvVars = {
 			TEST_LOCAL: 'testValue',
 		};
@@ -155,8 +155,8 @@ describe('apify run', () => {
 		writeFileSync(joinPath('src/other.js'), actCode, { flag: 'w' });
 
 		const apifyJson = EMPTY_LOCAL_CONFIG;
-		apifyJson.environmentVariables = testEnvVars;
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
+		writeFileSync(joinPath(DOTENV_FILE_NAME), 'TEST_LOCAL=testValue\n', { flag: 'w' });
 
 		const pkgJson = readFileSync(joinPath('package.json'), 'utf8');
 		const parsedPkgJson = JSON.parse(pkgJson);
@@ -178,7 +178,7 @@ describe('apify run', () => {
 		expect(actOutput2).toStrictEqual('uwu');
 	});
 
-	it(`[api] run with env vars from "${LOCAL_CONFIG_PATH}" and direct path to script`, async () => {
+	it(`[api] run with env vars from "${DOTENV_FILE_NAME}" and direct path to script`, async () => {
 		const testEnvVars = {
 			TEST_LOCAL: 'testValue',
 		};
@@ -198,8 +198,8 @@ describe('apify run', () => {
 		writeFileSync(joinPath('src/other.js'), actCode, { flag: 'w' });
 
 		const apifyJson = EMPTY_LOCAL_CONFIG;
-		apifyJson.environmentVariables = testEnvVars;
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
+		writeFileSync(joinPath(DOTENV_FILE_NAME), 'TEST_LOCAL=testValue\n', { flag: 'w' });
 
 		await testRunCommand(RunCommand, { flags_entrypoint: 'src/other.js' });
 

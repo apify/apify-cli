@@ -33,7 +33,7 @@ import {
 	resolveDockerContext,
 	toPosix,
 } from '../../lib/docker-context.js';
-import { countLegacyEnvVars, hasLegacyEnvVars } from '../../lib/env-vars/legacy.js';
+import { assertNoLegacyEnvVars, countLegacyEnvVars } from '../../lib/env-vars/legacy.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
 import { isAbortingJobOnSignal, useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -443,7 +443,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`Files matched by .gitignore and .actorignore are excluded. ` +
 		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files. ` +
 		`.env and .env.* files are never uploaded, except .env.example.\n` +
-		`Env vars aren't sent: "environmentVariables" in '${LOCAL_CONFIG_PATH}' applies to local runs only. Set platform env vars with apify env push or in Apify Console.\n` +
+		`Env vars aren't sent. Set platform env vars with apify env push or in Apify Console.\n` +
 		`If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push uploads the whole Git repository: ` +
 		`the Actor folder as above, and everything else that Git tracks or doesn't ignore (.actorignore doesn't apply there). ` +
 		`Outside Git, it uploads the whole Docker context as above.\n` +
@@ -513,11 +513,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			default: false,
 			required: false,
 		}),
-		'allow-missing-secrets': Flags.boolean({
-			description: "Deprecated, has no effect: apify push doesn't send env vars.",
-			required: false,
-			default: false,
-		}),
 		'apply-env-vars-to-build': Flags.boolean({
 			description: `Make the environment variables also available to the Actor build process. Use --no-apply-env-vars-to-build to turn the setting off. Overrides the value of the 'applyEnvVarsToBuild' field in the '${LOCAL_CONFIG_PATH}' file. When both the field and the flag are omitted, the setting currently stored on the platform is kept.`,
 			required: false,
@@ -534,12 +529,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	};
 
 	async run() {
-		if (this.flags.allowMissingSecrets) {
-			warning({
-				message: '--allow-missing-secrets is deprecated and has no effect. apify push no longer sends env vars.',
-			});
-		}
-
 		// Resolving with `.` will mean stay in the cwd folder, whereas anything else in dir will be resolved. If users pass in a full path (`/home/...`, it will correctly resolve to that)
 		const cwd = resolve(process.cwd(), this.flags.dir ?? '.');
 
@@ -766,11 +755,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			secretRefsCount: (this.telemetryData.push?.secretRefsCount ?? 0) + envVarCounts.secretRefsCount,
 		};
 
-		if (hasLegacyEnvVars(actorConfig)) {
-			warning({
-				message: `"environmentVariables" in ${LOCAL_CONFIG_PATH} applies to local runs only. apify push doesn't set env vars on the platform. Run apify env push, or set them in Apify Console. Run apify env migrate to move them to .env.`,
-			});
-		}
+		assertNoLegacyEnvVars(actorConfig);
 
 		// A monorepo Actor builds from a Docker context above its folder, so the push uploads its repository
 		// (or, outside Git, the context) and tells the platform where the Actor lies in it.

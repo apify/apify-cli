@@ -88,10 +88,6 @@ describe('[api] apify push', () => {
 		'should work without actorId',
 		async () => {
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
-			actorJson.environmentVariables = {
-				MY_ENV_VAR: 'envVarValue',
-			};
-			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
 			const pushInstance = await testRunCommand(ActorsPushCommand, {
 				flags_noPrompt: true,
@@ -113,7 +109,6 @@ describe('[api] apify push', () => {
 
 			expect(createdActorVersion!.versionNumber).to.be.eql(actorJson.version);
 			expect(createdActorVersion!.buildTag).to.be.eql('latest');
-			// apify push doesn't send environmentVariables from actor.json
 			expect(createdActorVersion!.envVars ?? []).to.be.eql([]);
 			// TODO: vlad, fix this too
 			expect((createdActorVersion as any)!.sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
@@ -123,7 +118,7 @@ describe('[api] apify push', () => {
 			expect(pushInstance['telemetryData'].push).to.be.eql({
 				actorId: createdActor!.id,
 				wasCreated: true,
-				envVarsCount: 1,
+				envVarsCount: 0,
 				secretRefsCount: 0,
 			});
 		},
@@ -164,7 +159,7 @@ describe('[api] apify push', () => {
 			expect(pushInstance['telemetryData'].push).to.be.eql({
 				actorId: testActor.id,
 				wasCreated: false,
-				envVarsCount: 1,
+				envVarsCount: 0,
 				secretRefsCount: 0,
 			});
 		},
@@ -218,7 +213,7 @@ describe('[api] apify push', () => {
 	);
 
 	it(
-		'should leave the platform env vars untouched when actor.json has environmentVariables',
+		'should stop before the upload when actor.json has environmentVariables',
 		async () => {
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 			const originalEnvironmentVariables = actorJson.environmentVariables;
@@ -240,10 +235,11 @@ describe('[api] apify push', () => {
 			});
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
+			const versionBefore = await testActorClient.version(actorJson.version).get();
 			const envVarsBefore = await testActorClient.version(actorJson.version).envVars().list();
 
 			try {
-				// A different value, a new name, and an @ref without a stored secret, which used to fail the push.
+				// A different value, a new name, and an @ref without a stored secret.
 				actorJson.environmentVariables = {
 					CONSOLE_ONLY: 'localValue',
 					LOCAL_ONLY: 'localOnly',
@@ -264,16 +260,12 @@ describe('[api] apify push', () => {
 					String(a.name).localeCompare(String(b.name));
 				expect(envVarsAfter.items.sort(byEnvVarName)).to.be.eql(envVarsBefore.items.sort(byEnvVarName));
 				expect(envVarsAfter.items.map((envVar) => envVar.name).sort()).to.be.eql(['CONSOLE_ONLY', 'CONSOLE_SECRET']);
-				// The push did reach this version: its source files are the local ones now.
-				expect((versionAfter as any).sourceFiles.length).to.be.greaterThan(0);
-				expect(logMessages.error.join('\n')).to.include('applies to local runs only');
+				expect((versionAfter as any).sourceFiles).to.be.eql((versionBefore as any).sourceFiles);
+				expect(logMessages.error.join('\n')).to.include(
+					'"environmentVariables" in .actor/actor.json is no longer supported. Run apify env migrate to move the values to .env.',
+				);
 				// eslint-disable-next-line dot-notation
-				expect(pushInstance['telemetryData'].push).to.be.eql({
-					actorId: testActor.id,
-					wasCreated: false,
-					envVarsCount: 3,
-					secretRefsCount: 1,
-				});
+				expect(pushInstance['telemetryData'].push).to.be.eql({ envVarsCount: 3, secretRefsCount: 1 });
 			} finally {
 				actorJson.environmentVariables = originalEnvironmentVariables;
 				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });

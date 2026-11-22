@@ -91,7 +91,7 @@ export class EnvMigrateCommand extends ApifyCommand<typeof EnvMigrateCommand> {
 		const missingNames = [...new Set(missingSecrets.map(({ secretName }) => secretName))].sort(byName);
 		if (missingNames.length && !allowMissingSecrets) {
 			envFail(
-				`These secrets aren't in the local secrets store: ${missingNames.join(', ')}. Add them with apify secrets add, or pass --allow-missing-secrets to write their keys empty.`,
+				`These secrets aren't in the local secrets store: ${missingNames.join(', ')}. Pass --allow-missing-secrets to write their keys empty, then fill in their values in .env.`,
 			);
 		}
 

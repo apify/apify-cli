@@ -2,8 +2,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync }
 import process from 'node:process';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
-import { __resetDeprecationWarningsForTests } from '../../../src/lib/env-vars/deprecations.js';
+import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { getLocalDatasetPath } from '../../../src/lib/utils.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -26,8 +25,10 @@ const { logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { RunCommand } = await import('../../../src/commands/run.js');
+// The command sets the exit code on this mocked copy of `node:process`, not on the global one.
+const { default: commandProcess } = await import('node:process');
 
-const RECORDED_VARS = ['FROM_SHELL', 'CRAWLEE_PURGE_ON_START', 'FROM_ACTOR_JSON', 'FROM_DOTENV', 'SECRET_REF'];
+const RECORDED_VARS = ['FROM_SHELL', 'CRAWLEE_PURGE_ON_START', 'FROM_DOTENV', 'SECRET_REF'];
 
 describe('apify run with .env', () => {
 	let originalActorJson: string;
@@ -64,7 +65,6 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 
 	beforeEach(() => {
 		resetCwdCaches();
-		__resetDeprecationWarningsForTests();
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), originalActorJson);
 		rmSync(joinPath('.env'), { force: true });
 		rmSync(resultPath, { force: true });
@@ -73,6 +73,7 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 	afterEach(() => {
 		vitest.unstubAllEnvs();
 		process.exitCode = undefined;
+		commandProcess.exitCode = undefined;
 	});
 
 	const setEnvironmentVariables = (environmentVariables: Record<string, string>) => {
@@ -86,72 +87,56 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 		return JSON.parse(readFileSync(resultPath, 'utf8'));
 	};
 
-	it('runs without .env and applies environmentVariables', async () => {
-		setEnvironmentVariables({ FROM_ACTOR_JSON: 'actor-json' });
-
-		const env = await runAndReadEnv();
-
-		expect(env.FROM_ACTOR_JSON).toBe('actor-json');
-		expect(env.FROM_DOTENV).toBeNull();
-	});
-
-	it('applies shell < CLI-set vars < environmentVariables < .env', async () => {
-		for (const name of ['FROM_SHELL', 'CRAWLEE_PURGE_ON_START', 'FROM_ACTOR_JSON', 'FROM_DOTENV']) {
+	it('applies shell < CLI-set vars < .env', async () => {
+		for (const name of ['FROM_SHELL', 'CRAWLEE_PURGE_ON_START', 'FROM_DOTENV']) {
 			vitest.stubEnv(name, 'shell');
 		}
-		setEnvironmentVariables({ FROM_ACTOR_JSON: 'actor-json', FROM_DOTENV: 'actor-json' });
 		writeFileSync(joinPath('.env'), 'FROM_DOTENV=dotenv\n');
 
 		const env = await runAndReadEnv();
 
 		expect(env.FROM_SHELL).toBe('shell');
 		expect(env.CRAWLEE_PURGE_ON_START).toMatch(/^[01]$/);
-		expect(env.FROM_ACTOR_JSON).toBe('actor-json');
 		expect(env.FROM_DOTENV).toBe('dotenv');
 	});
 
-	it('lets environmentVariables override a CLI-set var', async () => {
-		setEnvironmentVariables({ CRAWLEE_PURGE_ON_START: 'actor-json' });
-
-		expect((await runAndReadEnv()).CRAWLEE_PURGE_ON_START).toBe('actor-json');
-	});
-
-	it('lets .env override a CLI-set var and environmentVariables', async () => {
-		setEnvironmentVariables({ CRAWLEE_PURGE_ON_START: 'actor-json' });
+	it('lets .env override a CLI-set var', async () => {
 		writeFileSync(joinPath('.env'), 'CRAWLEE_PURGE_ON_START=dotenv\n');
 
 		expect((await runAndReadEnv()).CRAWLEE_PURGE_ON_START).toBe('dotenv');
 	});
 
-	describe('deprecation of environmentVariables', () => {
-		const DEPRECATION = '"environmentVariables" in .actor/actor.json is deprecated';
-		const deprecationLines = () => logMessages.error.filter((line) => line.includes(DEPRECATION));
+	describe('removed environmentVariables', () => {
+		const REMOVED =
+			'"environmentVariables" in .actor/actor.json is no longer supported. Run apify env migrate to move the values to .env.';
 
-		it('warns once on stderr and records it when environmentVariables is non-empty', async () => {
-			setEnvironmentVariables({ FROM_ACTOR_JSON: 'actor-json', SECRET_REF: '@missing' });
+		it.each([
+			['plain values', { PLAIN: 's3cr3t-sentinel' }],
+			['a @secret reference', { SECRET_REF: '@mySecret' }],
+		])(
+			'fails with one line and exit code 5 for %s, without running the Actor',
+			async (_label, environmentVariables) => {
+				setEnvironmentVariables(environmentVariables);
+				writeFileSync(joinPath('.env'), 'FROM_DOTENV=dotenv\n');
 
-			const instance = await testRunCommand(RunCommand, { flags_allowMissingSecrets: true });
+				await testRunCommand(RunCommand, {});
 
-			expect(deprecationLines()).toHaveLength(1);
-			expect(logMessages.log.join('\n')).not.toContain(DEPRECATION);
-			expect(instance['telemetryData'].deprecationWarnings).toEqual(['environmentVariables']);
-			expect(JSON.parse(readFileSync(resultPath, 'utf8')).FROM_ACTOR_JSON).toBe('actor-json');
-		});
+				expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+				expect(logMessages.error.filter((line) => line.includes(REMOVED))).toHaveLength(1);
+				expect(existsSync(resultPath)).toBe(false);
+				expect([...logMessages.log, ...logMessages.error].join('\n')).not.toContain('s3cr3t-sentinel');
+			},
+		);
 
-		it("doesn't warn when environmentVariables is empty", async () => {
+		it('ignores an empty environmentVariables', async () => {
 			setEnvironmentVariables({});
+			writeFileSync(joinPath('.env'), 'FROM_DOTENV=dotenv\n');
 
-			const instance = await testRunCommand(RunCommand, {});
+			const env = await runAndReadEnv();
 
-			expect(deprecationLines()).toHaveLength(0);
-			expect(instance['telemetryData'].deprecationWarnings).toBeUndefined();
-		});
-
-		it("doesn't warn without environmentVariables", async () => {
-			const instance = await testRunCommand(RunCommand, {});
-
-			expect(deprecationLines()).toHaveLength(0);
-			expect(instance['telemetryData'].deprecationWarnings).toBeUndefined();
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(env.FROM_DOTENV).toBe('dotenv');
+			expect(logMessages.error.join('\n')).not.toContain('environmentVariables');
 		});
 	});
 
