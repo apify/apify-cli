@@ -220,12 +220,17 @@ describe('[api] apify push', () => {
 	it(
 		'should leave the platform env vars untouched when actor.json has environmentVariables',
 		async () => {
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			const originalEnvironmentVariables = actorJson.environmentVariables;
+
+			// The platform version is the one push updates, so the test can't pass by pushing into another version.
 			const testActor = await testUserClient.actors().create({
 				...TEST_ACTOR,
 				name: useUniqueId('cli-push-ignore-env-vars'),
 				versions: [
 					{
 						...TEST_ACTOR.versions![0],
+						versionNumber: actorJson.version,
 						envVars: [
 							{ name: 'CONSOLE_ONLY', value: 'consoleValue' },
 							{ name: 'CONSOLE_SECRET', value: 'consoleSecret', isSecret: true },
@@ -235,10 +240,7 @@ describe('[api] apify push', () => {
 			});
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
-			const envVarsBefore = await testActorClient.version('0.0').envVars().list();
-
-			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
-			const originalEnvironmentVariables = actorJson.environmentVariables;
+			const envVarsBefore = await testActorClient.version(actorJson.version).envVars().list();
 
 			try {
 				// A different value, a new name, and an @ref without a stored secret, which used to fail the push.
@@ -255,12 +257,15 @@ describe('[api] apify push', () => {
 					flags_force: true,
 				});
 
-				const envVarsAfter = await testActorClient.version('0.0').envVars().list();
+				const versionAfter = await testActorClient.version(actorJson.version).get();
+				const envVarsAfter = await testActorClient.version(actorJson.version).envVars().list();
 
 				const byEnvVarName = (a: { name?: string }, b: { name?: string }) =>
 					String(a.name).localeCompare(String(b.name));
 				expect(envVarsAfter.items.sort(byEnvVarName)).to.be.eql(envVarsBefore.items.sort(byEnvVarName));
 				expect(envVarsAfter.items.map((envVar) => envVar.name).sort()).to.be.eql(['CONSOLE_ONLY', 'CONSOLE_SECRET']);
+				// The push did reach this version: its source files are the local ones now.
+				expect((versionAfter as any).sourceFiles.length).to.be.greaterThan(0);
 				expect(logMessages.error.join('\n')).to.include('applies to local runs only');
 				// eslint-disable-next-line dot-notation
 				expect(pushInstance['telemetryData'].push).to.be.eql({
