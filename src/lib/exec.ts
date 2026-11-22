@@ -29,7 +29,13 @@ const spawnPromised = async (
 	opts: Options,
 	{ forwardSignals }: SpawnPromisedInternalOptions = {},
 ) => {
-	cliDebugPrint('spawnPromised', { cmd, args, opts, forwardSignals });
+	// Only the names of the env vars: the values include the token and everything from .env.
+	cliDebugPrint('spawnPromised', {
+		cmd,
+		args,
+		opts: { ...opts, env: opts.env && Object.keys(opts.env) },
+		forwardSignals,
+	});
 
 	const childProcess = execa(cmd, args, {
 		windowsHide: true,
