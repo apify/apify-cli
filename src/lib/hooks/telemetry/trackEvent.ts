@@ -41,6 +41,10 @@ interface CliCommandEvent {
 	push?: {
 		actorId?: string;
 		wasCreated?: boolean;
+		/** Keys in `environmentVariables` in actor.json, summed over the Actors of a monorepo push; 0 when absent. */
+		envVarsCount?: number;
+		/** Values in `environmentVariables` that are `@secret` references, summed the same way. */
+		secretRefsCount?: number;
 	};
 
 	/** A push from a directory without an Actor of its own: how many Actors were chosen and how many failed. */

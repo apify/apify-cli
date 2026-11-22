@@ -33,6 +33,7 @@ import {
 	resolveDockerContext,
 	toPosix,
 } from '../../lib/docker-context.js';
+import { countLegacyEnvVars } from '../../lib/env-vars/legacy.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
 import { isAbortingJobOnSignal, useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -750,6 +751,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
+		// Counted before any API call, so a push that fails later still counts. A monorepo push adds up its Actors.
+		const envVarCounts = countLegacyEnvVars(actorConfig?.environmentVariables);
+		this.telemetryData.push = {
+			...this.telemetryData.push,
+			envVarsCount: (this.telemetryData.push?.envVarsCount ?? 0) + envVarCounts.envVarsCount,
+			secretRefsCount: (this.telemetryData.push?.secretRefsCount ?? 0) + envVarCounts.secretRefsCount,
+		};
+
 		// A monorepo Actor builds from a Docker context above its folder, so the push uploads its repository
 		// (or, outside Git, the context) and tells the platform where the Actor lies in it.
 		const dockerContext = resolveDockerContext(cwd, actorConfig?.dockerContextDir);
@@ -876,6 +885,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 
 		this.telemetryData.push = {
+			...this.telemetryData.push,
 			actorId,
 			wasCreated: isActorCreatedNow,
 		};

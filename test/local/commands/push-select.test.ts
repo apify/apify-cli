@@ -339,6 +339,35 @@ describe('apify push in a repository with several Actors', () => {
 			expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 		});
 
+		it('records the environmentVariables counts summed over every pushed Actor', async () => {
+			await write(
+				`actors/a/${LOCAL_CONFIG_PATH}`,
+				JSON.stringify({
+					actorSpecification: 1,
+					name: ACTOR_A.name,
+					version: '0.0',
+					buildTag: 'latest',
+					environmentVariables: { FIRST: 'one', TOKEN: '@myToken' },
+				}),
+			);
+			await write(
+				`actors/b/${LOCAL_CONFIG_PATH}`,
+				JSON.stringify({
+					actorSpecification: 1,
+					name: ACTOR_B.name,
+					version: '0.0',
+					buildTag: 'latest',
+					environmentVariables: { SECOND: 'two' },
+				}),
+			);
+
+			const instance = await run({ flags_all: true, flags_allowMissingSecrets: true });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(pushedActorIds()).toEqual([ACTOR_A.id, ACTOR_B.id, ACTOR_C.id]);
+			expect(instance['telemetryData'].push).toMatchObject({ envVarsCount: 3, secretRefsCount: 1 });
+		});
+
 		it('passes --version and --build-tag to every version payload', async () => {
 			await run({ flags_all: true, flags_version: '1.5', flags_buildTag: 'beta' });
 
