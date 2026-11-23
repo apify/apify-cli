@@ -1,4 +1,5 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { EnvDiffCommand } from './diff.js';
 import { EnvLsCommand } from './ls.js';
 import { EnvPullCommand } from './pull.js';
 import { EnvPushCommand } from './push.js';
@@ -22,7 +23,14 @@ export class EnvIndexCommand extends ApifyCommand<typeof EnvIndexCommand> {
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-env';
 
-	static override subcommands = [EnvLsCommand, EnvSetCommand, EnvRmCommand, EnvPushCommand, EnvPullCommand];
+	static override subcommands = [
+		EnvLsCommand,
+		EnvSetCommand,
+		EnvRmCommand,
+		EnvPushCommand,
+		EnvPullCommand,
+		EnvDiffCommand,
+	];
 
 	async run() {
 		this.printHelp();
