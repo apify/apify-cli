@@ -456,6 +456,16 @@ describe('apify env push', () => {
 			]);
 			expect(envPlatform.writes).toEqual([]);
 		});
+
+		it('escapes a newline in a skipped name, so the warning stays on one line', async () => {
+			envVarsOnPlatform().push({ name: 'X\n✔ Pushed 0 of 0 changes. Y', value: 'x', isSecret: false });
+			writeDotEnv('SAME=same-value\n');
+
+			await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_yes: true });
+
+			expect(stderr()).toContain('Skipped DATABASE-URL, CLEAR\\x1b[2J, X\\x0a✔ Pushed 0 of 0 changes. Y: a name');
+			expect(`${stdout()}\n${stderr()}`).not.toContain('\n✔ Pushed 0 of 0 changes. Y');
+		});
 	});
 
 	it('fails on a name that is too long before any write', async () => {

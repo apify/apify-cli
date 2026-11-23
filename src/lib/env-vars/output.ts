@@ -32,7 +32,7 @@ export const escapeName = (name: string) => escapeControlChars(name, { keepNewli
 
 /** Leaves out the platform variables whose names .env can't hold, such as `BAD-NAME`, and names them in a warning. */
 export function skipInvalidDotEnvNames(envVars: PlatformEnvVar[]): PlatformEnvVar[] {
-	const skipped = envVars.filter(({ name }) => !isValidDotEnvName(name)).map(({ name }) => escapeControlChars(name));
+	const skipped = envVars.filter(({ name }) => !isValidDotEnvName(name)).map(({ name }) => escapeName(name));
 	if (skipped.length) {
 		warning({
 			message: `Skipped ${skipped.join(', ')}: a name in .env can only have letters, digits, and underscores, and can't start with a digit.`,
