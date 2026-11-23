@@ -4,6 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { YesFlag } from '../../lib/command-framework/flags.js';
 import {
 	checkDotEnvWritable,
+	describeMalformedLines,
 	ensureDotEnvGitignored,
 	isValidDotEnvName,
 	readDotEnv,
@@ -59,6 +60,9 @@ export class EnvPullCommand extends ApifyCommand<typeof EnvPullCommand> {
 		const platform = await listPlatformEnvVars(target);
 		const dotEnv = readDotEnv(target.actorDir);
 		if (!dotEnv.exists) checkDotEnvWritable(target.actorDir);
+
+		const malformedLinesWarning = describeMalformedLines(dotEnv);
+		if (malformedLinesWarning) warning({ message: `${malformedLinesWarning} They stay in .env unchanged.` });
 
 		// Platform order, so a new .env lists the variables as the platform does.
 		const updates: Record<string, string> = {};
