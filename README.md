@@ -10,7 +10,7 @@ Apify CLI is the command-line tool for creating, developing, and deploying [Apif
 - Create, develop, and deploy Apify Actors from your terminal
 - Run Actors locally for development and testing, or in the Apify cloud
 - Manage Actors, datasets, key-value stores, and request queues
-- Manage secret environment variables used by your Actors
+- Manage your Actors' environment variables on the platform, and keep them in sync with a local `.env` file
 - Works with any programming language — Actors run as Docker containers on the platform
 
 ## Agent skill
@@ -116,10 +116,10 @@ The table below lists the most common commands. For the full reference, see the 
 | `apify pull`    | Pull an Actor from the cloud to your local machine        |
 | `apify call`    | Run the Actor on the Apify cloud                          |
 | `apify builds`  | Manage Actor builds (`create`, `info`, `ls`, `log`, `rm`) |
-| `apify secrets` | Manage secret environment variables                       |
+| `apify env`     | Manage the Actor's env vars on the platform and in `.env` |
 | `apify help`    | Show help for any command                                 |
 
-Actor configuration lives in `.actor/actor.json`. See the [Actor configuration docs](https://docs.apify.com/platform/actors/development/actor-definition/actor-json) for the full schema (name, version, build tag, environment variables, Dockerfile, input schema, storages).
+Actor configuration lives in `.actor/actor.json`. See the [Actor configuration docs](https://docs.apify.com/platform/actors/development/actor-definition/actor-json) for the full schema (name, version, build tag, Dockerfile, input schema, storages). Local environment variables live in a `.env` file next to the `.actor` folder; see [Environment variables](https://docs.apify.com/cli/docs/vars).
 
 ## Documentation
 
