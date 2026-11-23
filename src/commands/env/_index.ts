@@ -1,6 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { EnvDiffCommand } from './diff.js';
 import { EnvLsCommand } from './ls.js';
+import { EnvMigrateCommand } from './migrate.js';
 import { EnvPullCommand } from './pull.js';
 import { EnvPushCommand } from './push.js';
 import { EnvRmCommand } from './rm.js';
@@ -30,6 +31,7 @@ export class EnvIndexCommand extends ApifyCommand<typeof EnvIndexCommand> {
 		EnvPushCommand,
 		EnvPullCommand,
 		EnvDiffCommand,
+		EnvMigrateCommand,
 	];
 
 	async run() {

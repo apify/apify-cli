@@ -768,7 +768,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		if (hasLegacyEnvVars(actorConfig)) {
 			warning({
-				message: `"environmentVariables" in ${LOCAL_CONFIG_PATH} applies to local runs only. apify push doesn't set env vars on the platform. Run apify env push, or set them in Apify Console.`,
+				message: `"environmentVariables" in ${LOCAL_CONFIG_PATH} applies to local runs only. apify push doesn't set env vars on the platform. Run apify env push, or set them in Apify Console. Run apify env migrate to move them to .env.`,
 			});
 		}
 

@@ -1259,24 +1259,29 @@ DESCRIPTION
   runs see them.
 
 SUBCOMMANDS
-  env ls    Lists the env vars of an Actor version on the Apify
-            platform. Secret values stay hidden.
-  env set   Creates an env var on an Actor version, or updates it when
-            it exists. The value comes from a prompt or standard input, never from
-            an argument, so it stays out of shell history.
-  env rm    Deletes an env var from an Actor version.
-  env push  Uploads .env to an Actor version. Shows the changes and asks
-            before it makes them. Adds and updates variables; --prune also deletes
-            the ones that aren't in .env. New variables are secrets unless --plain
-            is passed. Keys with an empty value are skipped.
-  env pull  Writes the env vars of an Actor version into .env. Secret
-            values can't be read back, so their keys are written empty. In an
-            existing .env, it updates plain variables and keeps the local value of
-            secrets and of keys that exist only locally.
-  env diff  Compares .env with the env vars of an Actor version. Exits
-            with 0 when they're in sync and with 1 on any difference, so it fits
-            pre-commit hooks and CI. Secrets are compared by name only. Values are
-            never printed.
+  env ls       Lists the env vars of an Actor version on the Apify
+               platform. Secret values stay hidden.
+  env set      Creates an env var on an Actor version, or updates it
+               when it exists. The value comes from a prompt or standard input,
+               never from an argument, so it stays out of shell history.
+  env rm       Deletes an env var from an Actor version.
+  env push     Uploads .env to an Actor version. Shows the changes
+               and asks before it makes them. Adds and updates variables; --prune
+               also deletes the ones that aren't in .env. New variables are
+               secrets unless --plain is passed. Keys with an empty value are
+               skipped.
+  env pull     Writes the env vars of an Actor version into .env.
+               Secret values can't be read back, so their keys are written empty.
+               In an existing .env, it updates plain variables and keeps the local
+               value of secrets and of keys that exist only locally.
+  env diff     Compares .env with the env vars of an Actor version.
+               Exits with 0 when they're in sync and with 1 on any difference, so
+               it fits pre-commit hooks and CI. Secrets are compared by name only.
+               Values are never printed.
+  env migrate  Moves "environmentVariables" from .actor/actor.json
+               into .env, resolving "@secret" references from the local secrets
+               store. Keys already in .env keep their value. Then removes the
+               block from actor.json.
 ```
 
 ##### `apify env ls`
@@ -1443,6 +1448,29 @@ FLAGS
                          command, by name or user ID. See "apify auth list".
   -v, --version=<value>  Actor version. Defaults to "version"
                          in '.actor/actor.json', then to 0.0.
+```
+
+##### `apify env migrate`
+
+```sh
+DESCRIPTION
+  Moves "environmentVariables" from .actor/actor.json into .env, resolving 
+  "@secret" references from the local secrets store. Keys already in .env keep 
+  their value. Then removes the block from actor.json.
+
+USAGE
+  $ apify env migrate [--allow-missing-secrets]
+                      [--dir <value>] [-y]
+
+FLAGS
+      --allow-missing-secrets  Write the keys of secrets
+                               that aren't in ~/.apify/secrets.json with an empty
+                               value instead of stopping.
+      --dir=<value>            Directory of the Actor and
+                               its .env file. Use it to pick an Actor folder in a
+                               monorepo. Defaults to the current directory.
+  -y, --yes                    Answer "yes" to all
+                               prompts.
 ```
 <!-- actor-env-commands-end -->
 <!-- prettier-ignore-end -->

@@ -31,7 +31,7 @@ export interface EnvTarget {
 	actorConfig?: Record<string, unknown>;
 }
 
-function assertDirectory(actorDir: string) {
+export function assertDirectory(actorDir: string): void {
 	let isDirectory = false;
 	try {
 		isDirectory = statSync(actorDir).isDirectory();
