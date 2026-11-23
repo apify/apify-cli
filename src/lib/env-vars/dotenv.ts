@@ -10,21 +10,35 @@ export interface DotEnvFile {
 	/** Empty when the file doesn't exist. */
 	content: string;
 	vars: Record<string, string>;
-	/** 1-based numbers of the lines that aren't a `NAME=value` assignment with a valid name. They aren't in `vars`. */
+	/**
+	 * 1-based numbers of the lines that aren't a `NAME=value` assignment with a valid name and a value without a NUL
+	 * character. They aren't in `vars`.
+	 */
 	malformedLines: number[];
 }
 
-const VALID_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+// Setting __proto__ on an object does nothing, so the vars could never hold it.
+const VALID_NAME = /^(?!__proto__$)[A-Za-z_][A-Za-z0-9_]*$/;
 const QUOTES = ['"', "'", '`'];
 
-const trimSpaces = (text: string) => text.replace(/^[ \t]+|[ \t]+$/g, '');
+const isSpace = (char: string) => char === ' ' || char === '\t';
+
+/** Trims spaces and tabs with a loop: a regex for the end retries every run of spaces inside the text, which is quadratic. */
+const trimSpaces = (text: string) => {
+	let start = 0;
+	let end = text.length;
+	while (start < end && isSpace(text[start])) start++;
+	while (end > start && isSpace(text[end - 1])) end--;
+	return text.slice(start, end);
+};
 
 /**
  * Parses .env content like `util.parseEnv` on Node.js 22.16 and later, on every Node.js version: on 22.1 to 22.15 and
  * 23, `util.parseEnv` turns a line without `=`, an indented comment, or `=` in a last-line value into wrong variables.
  * Unlike `util.parseEnv`, a value of only spaces is empty instead of taking the next line, `export NAME=` sets `NAME`,
  * and an indented comment is always a comment. A line that isn't `NAME=value` with a valid env var name isn't in
- * `vars`: only its number is kept, so its content is never printed.
+ * `vars`: only its number is kept, so its content is never printed. Neither is a value with a NUL character, which a
+ * process can't get in its environment.
  */
 export function parseDotEnv(content: string): Pick<DotEnvFile, 'vars' | 'malformedLines'> {
 	const lines = content.replaceAll('\r', '').split('\n');
@@ -68,7 +82,7 @@ export function parseDotEnv(content: string): Pick<DotEnvFile, 'vars' | 'malform
 			}
 		}
 
-		if (VALID_NAME.test(name)) vars[name] = value;
+		if (VALID_NAME.test(name) && !value.includes('\0')) vars[name] = value;
 		else malformedLines.push(lineNumber);
 	}
 
