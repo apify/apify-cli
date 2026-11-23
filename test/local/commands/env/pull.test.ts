@@ -321,6 +321,81 @@ describe('apify env pull', () => {
 		for (const raw of ['\u001b]52', '\u0007']) expect(`${stdout()}\n${stderr()}`).not.toContain(raw);
 	});
 
+	describe("with platform values that .env can't hold", () => {
+		const CERT_BODY = 'MIIcrlfcertbody';
+		const NUL_VALUE = 'nul-s3cr3t\0tail';
+
+		beforeEach(() => {
+			envPlatform.state.actors[0].versions[0].envVars.push(
+				{
+					name: 'TLS_CERT',
+					value: `-----BEGIN CERTIFICATE-----\r\n${CERT_BODY}\r\n-----END CERTIFICATE-----`,
+					isSecret: false,
+				},
+				{ name: 'DB_PASSWORD', value: NUL_VALUE, isSecret: false },
+			);
+		});
+
+		const expectNoSkippedValues = () => {
+			for (const value of [CERT_BODY, 'nul-s3cr3t']) expect(`${stdout()}\n${stderr()}`).not.toContain(value);
+		};
+
+		it('skips them with a reason by name and still writes the other variables', async () => {
+			writeDotEnvFile('LOCAL_ONLY=keep-me\n');
+
+			await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_yes: true, flags_json: true });
+
+			expect(process.exitCode).toBeUndefined();
+			expect(readDotEnvFile()).toBe(`LOCAL_ONLY=keep-me\nPLAIN='${PLAIN_VALUE}'\nAPI_KEY=\nLOG_LEVEL=debug\n`);
+			expect(stderr()).toContain(
+				"Skipped the value of TLS_CERT: it has a carriage return, as in Windows line endings, which .env can't hold.",
+			);
+			expect(stderr()).toContain("Skipped the value of DB_PASSWORD: it has a NUL character, which .env can't hold.");
+			expect(JSON.parse(stdout())).toMatchObject({ added: ['API_KEY', 'LOG_LEVEL', 'PLAIN'], updated: [] });
+			expectNoSkippedValues();
+		});
+
+		it('keeps the local value of a variable whose platform value it skips', async () => {
+			const content = `PLAIN='${PLAIN_VALUE}'\nAPI_KEY=\nLOG_LEVEL=debug\nTLS_CERT=local-cert\n`;
+			writeDotEnvFile(content);
+
+			await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_yes: true });
+
+			expect(process.exitCode).toBeUndefined();
+			expect(readDotEnvFile()).toBe(content);
+			expect(stderr()).toContain('Skipped the value of TLS_CERT');
+			expect(stderr()).toContain('Nothing else to write to .env.');
+			expect(stderr()).not.toContain('already up to date');
+			expectNoSkippedValues();
+		});
+
+		it('writes no .env when no variable can be written', async () => {
+			envPlatform.state.actors[0].versions[0].envVars = envPlatform.state.actors[0].versions[0].envVars.filter(
+				({ name }) => name === 'TLS_CERT',
+			);
+
+			await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_yes: true, flags_json: true });
+
+			expect(process.exitCode).toBeUndefined();
+			expect(existsSync(dotEnvPath())).toBe(false);
+			expect(stderr()).toContain(
+				'None of the env vars on tester/my-actor version 0.0 can be written to .env, so no .env was written.',
+			);
+			expect(JSON.parse(stdout())).toMatchObject({ created: false, added: [] });
+		});
+	});
+
+	it('skips a platform variable named __proto__ and writes no .env for it', async () => {
+		envPlatform.state.actors[0].versions[1].envVars = [{ name: '__proto__', value: 'proto-value', isSecret: false }];
+
+		await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_version: '1.0', flags_json: true });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(existsSync(dotEnvPath())).toBe(false);
+		expect(stderr()).toContain('Skipped __proto__: a name in .env can only have');
+		expect(JSON.parse(stdout())).toMatchObject({ created: false, added: [] });
+	});
+
 	it('fails before touching .gitignore when .env is a directory', async () => {
 		mkdirSync(join(actorDir, '.env', 'bin'), { recursive: true });
 
