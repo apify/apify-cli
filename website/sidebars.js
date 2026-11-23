@@ -22,9 +22,9 @@ module.exports = [
 					label: 'Agent Skill'
 				},
 				{
-					type: 'doc',
-					id: 'actor-runtime',
-					label: 'Actor runtime'
+					type: 'link',
+					label: 'Actor runtime',
+					href: 'https://docs.apify.com/actors/development/test-and-debug/actor-runtime',
 				},
 			],
 		},
