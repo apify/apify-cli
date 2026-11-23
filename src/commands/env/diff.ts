@@ -6,10 +6,10 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import type { EnvVarComparisonStatus } from '../../lib/env-vars/diff.js';
 import { compareEnvVars } from '../../lib/env-vars/diff.js';
-import { readDotEnv } from '../../lib/env-vars/dotenv.js';
+import { failOnMalformedLines, readDotEnv } from '../../lib/env-vars/dotenv.js';
 import { envFail } from '../../lib/env-vars/errors.js';
 import { envTargetFlags } from '../../lib/env-vars/flags.js';
-import { describeTarget, targetJson } from '../../lib/env-vars/output.js';
+import { describeTarget, skipInvalidDotEnvNames, targetJson } from '../../lib/env-vars/output.js';
 import { listPlatformEnvVars } from '../../lib/env-vars/platform.js';
 import { resolveEnvTarget } from '../../lib/env-vars/target.js';
 import { simpleLog, success } from '../../lib/outputs.js';
@@ -56,17 +56,9 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 			);
 		}
 
-		// The lines of an unquoted multi-line value can read as NAME=value, so with malformed lines nothing is compared.
-		const { malformedLines } = dotEnv;
-		if (malformedLines.length) {
-			const lines =
-				malformedLines.length === 1 ? `line ${malformedLines[0]} is` : `lines ${malformedLines.join(', ')} are`;
-			envFail(
-				`Can't compare ${dotEnv.path}: ${lines} malformed. Quote values that span several lines, and fix or remove the other lines.`,
-			);
-		}
+		failOnMalformedLines(dotEnv, 'compare');
 
-		const comparison = compareEnvVars(dotEnv.vars, await listPlatformEnvVars(target));
+		const comparison = compareEnvVars(dotEnv.vars, skipInvalidDotEnvNames(await listPlatformEnvVars(target)));
 		const namesWith = (status: EnvVarComparisonStatus) =>
 			comparison.filter((entry) => entry.status === status).map(({ name }) => name);
 

@@ -3,7 +3,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { envFail } from '../../lib/env-vars/errors.js';
 import { envTargetFlags } from '../../lib/env-vars/flags.js';
-import { describeTarget, printRebuildReminder, targetJson } from '../../lib/env-vars/output.js';
+import { describeTarget, escapeControlChars, printRebuildReminder, targetJson } from '../../lib/env-vars/output.js';
 import {
 	createPlatformEnvVar,
 	getPlatformEnvVar,
@@ -70,13 +70,14 @@ export class EnvSetCommand extends ApifyCommand<typeof EnvSetCommand> {
 		const { name } = this.args;
 
 		validateEnvVarName(name);
+		const shownName = escapeControlChars(name);
 
 		const target = await resolveEnvTarget(this.flags);
 		const existing = await getPlatformEnvVar(target, name);
 		const isSecret = this.flags.secret ?? existing?.isSecret ?? false;
 
-		const value = await readEnvVarValue({ name, masked: isSecret });
-		validateEnvVarValue(name, value);
+		const value = await readEnvVarValue({ name: shownName, masked: isSecret });
+		validateEnvVarValue(shownName, value);
 
 		try {
 			if (existing) {
@@ -85,11 +86,11 @@ export class EnvSetCommand extends ApifyCommand<typeof EnvSetCommand> {
 				await createPlatformEnvVar(target, { name, value, isSecret });
 			}
 		} catch (err) {
-			envFail(`Couldn't set ${name} on ${describeTarget(target)}: ${(err as Error).message}`, 1);
+			envFail(`Couldn't set ${shownName} on ${describeTarget(target)}: ${(err as Error).message}`, 1);
 		}
 
 		if (existing && existing.isSecret !== isSecret) {
-			info({ message: `Changed ${name} from ${typeName(existing.isSecret)} to ${typeName(isSecret)}.` });
+			info({ message: `Changed ${shownName} from ${typeName(existing.isSecret)} to ${typeName(isSecret)}.` });
 		}
 
 		if (this.flags.json) {
@@ -103,7 +104,7 @@ export class EnvSetCommand extends ApifyCommand<typeof EnvSetCommand> {
 			});
 		} else {
 			success({
-				message: `${existing ? 'Updated' : 'Created'} ${name}${isSecret ? ' (secret)' : ''} on ${describeTarget(target)}.`,
+				message: `${existing ? 'Updated' : 'Created'} ${shownName}${isSecret ? ' (secret)' : ''} on ${describeTarget(target)}.`,
 				stdout: true,
 			});
 		}
