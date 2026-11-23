@@ -17,7 +17,8 @@ export interface DotEnvFile {
 	malformedLines: number[];
 }
 
-const VALID_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+// Setting __proto__ on an object does nothing, so the vars could never hold it.
+const VALID_NAME = /^(?!__proto__$)[A-Za-z_][A-Za-z0-9_]*$/;
 const QUOTES = ['"', "'", '`'];
 
 const isSpace = (char: string) => char === ' ' || char === '\t';

@@ -85,6 +85,13 @@ describe('readDotEnv', () => {
 		expect(dotEnv.malformedLines).toEqual([2, 3]);
 	});
 
+	it("counts __proto__ as malformed, since the vars can't hold it", () => {
+		const dotEnv = read('__proto__=proto-value\nA=one\n');
+
+		expect(dotEnv.vars).toEqual({ A: 'one' });
+		expect(dotEnv.malformedLines).toEqual([1]);
+	});
+
 	it('ignores full-line comments and blank lines', () => {
 		expect(read('# a comment\n\nA=one\n  # indented comment\nB=two\n').vars).toEqual({ A: 'one', B: 'two' });
 	});
