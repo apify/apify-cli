@@ -192,8 +192,10 @@ export function updateDotEnvContent(content: string, updates: Record<string, str
 		const start = i;
 		const quote = lines[i].slice(match[0].length).trimStart()[0];
 		if (QUOTES.includes(quote) && !lines[i].slice(lines[i].indexOf(quote, match[0].length) + 1).includes(quote)) {
-			const end = lines.findIndex((line, j) => j > i && line.includes(quote));
-			if (end !== -1) i = end;
+			// Searches from the next line on: a search from line 0 for every such value would be quadratic.
+			let end = i + 1;
+			while (end < lines.length && !lines[end].includes(quote)) end++;
+			if (end < lines.length) i = end;
 		}
 
 		assignments.set(match[2], { start, end: i, prefix: match[1] });

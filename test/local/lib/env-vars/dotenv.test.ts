@@ -286,6 +286,16 @@ describe('updateDotEnvContent', () => {
 		expect(parseDotEnv(result).vars).toEqual({ A: 'x\ny', B: 'z' });
 	});
 
+	it('finds the ends of thousands of multi-line values in linear time', () => {
+		const lines = Array.from({ length: 100_000 }, (_, i) => `KEY_${i}='first\nsecond'\n`);
+		const start = performance.now();
+
+		const result = updateDotEnvContent(lines.join(''), { KEY_99999: 'x', NEW: 'y' });
+
+		expect(performance.now() - start).toBeLessThan(2000);
+		expect(result).toBe(`${lines.slice(0, -1).join('')}KEY_99999=x\nNEW=y\n`);
+	});
+
 	it('adds a missing final newline before appending', () => {
 		expect(updateDotEnvContent('A=1', { B: '2' })).toBe('A=1\nB=2\n');
 	});
