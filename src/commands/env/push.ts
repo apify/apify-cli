@@ -6,10 +6,16 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import type { EnvPushAction, EnvPushStep } from '../../lib/env-vars/diff.js';
 import { compareEnvVars, envPushWrites, planEnvPush } from '../../lib/env-vars/diff.js';
-import { describeMalformedLines, readDotEnv } from '../../lib/env-vars/dotenv.js';
+import { failOnMalformedLines, readDotEnv } from '../../lib/env-vars/dotenv.js';
 import { envFail } from '../../lib/env-vars/errors.js';
 import { envTargetFlags } from '../../lib/env-vars/flags.js';
-import { describeTarget, printRebuildReminder, renderEnvPushPlan, targetJson } from '../../lib/env-vars/output.js';
+import {
+	describeTarget,
+	printRebuildReminder,
+	renderEnvPushPlan,
+	skipInvalidDotEnvNames,
+	targetJson,
+} from '../../lib/env-vars/output.js';
 import {
 	createPlatformEnvVar,
 	deletePlatformEnvVar,
@@ -21,7 +27,7 @@ import {
 import type { EnvTarget } from '../../lib/env-vars/target.js';
 import { resolveEnvTarget } from '../../lib/env-vars/target.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, simpleLog, success, warning } from '../../lib/outputs.js';
+import { error, info, simpleLog, success } from '../../lib/outputs.js';
 import { printJsonToStdout } from '../../lib/utils.js';
 
 interface EnvPushChange extends EnvPushStep {
@@ -100,8 +106,7 @@ export class EnvPushCommand extends ApifyCommand<typeof EnvPushCommand> {
 			);
 		}
 
-		const malformedLinesWarning = describeMalformedLines(dotEnv);
-		if (malformedLinesWarning) warning({ message: malformedLinesWarning });
+		failOnMalformedLines(dotEnv, 'push');
 
 		if (prune && !Object.keys(dotEnv.vars).length) {
 			envFail(
@@ -114,7 +119,8 @@ export class EnvPushCommand extends ApifyCommand<typeof EnvPushCommand> {
 			if (value) validateEnvVarValue(name, value);
 		}
 
-		const steps = planEnvPush(compareEnvVars(dotEnv.vars, await listPlatformEnvVars(target)), { prune, plain });
+		const platform = skipInvalidDotEnvNames(await listPlatformEnvVars(target));
+		const steps = planEnvPush(compareEnvVars(dotEnv.vars, platform), { prune, plain });
 		const writes = envPushWrites(steps);
 
 		const printJson = (confirmed: boolean, changes: EnvPushChange[] = steps) => {

@@ -143,6 +143,16 @@ describe('apify env rm', () => {
 		expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
 	});
 
+	it('escapes control characters in the name it prints', async () => {
+		envPlatform.state.actors[0].versions[0].envVars.push({ name: 'CLEAR\u001b[2J', value: 'x', isSecret: false });
+
+		await testRunCommand(EnvRmCommand, { args_name: 'CLEAR\u001b[2J', flags_dir: actorDir, flags_yes: true });
+
+		expect(envVarNames()).toEqual(['LOG_LEVEL', 'API_KEY']);
+		expect(logMessages.log.join('\n')).toContain('Deleted CLEAR\\x1b[2J from tester/my-actor version 0.0.');
+		expect(`${logMessages.log.join('\n')}\n${logMessages.error.join('\n')}`).not.toContain('\u001b[2J');
+	});
+
 	it('prints JSON', async () => {
 		const instance = await testRunCommand(EnvRmCommand, {
 			args_name: 'API_KEY',

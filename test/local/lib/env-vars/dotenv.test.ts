@@ -142,6 +142,17 @@ describe('readDotEnv', () => {
 		});
 	});
 
+	it('reads thousands of quoted values without keeping a copy of the rest of the file for each', () => {
+		const content = Array.from({ length: 5000 }, (_, i) => `KEY_${i}="value number ${i} with some text"`).join('\n');
+		const heapBefore = process.memoryUsage().heapUsed;
+
+		const { vars } = read(content);
+
+		expect(process.memoryUsage().heapUsed - heapBefore).toBeLessThan(50 * 1024 * 1024);
+		expect(Object.keys(vars)).toHaveLength(5000);
+		expect(vars.KEY_4999).toBe('value number 4999 with some text');
+	});
+
 	it('keeps the last value of a duplicate key', () => {
 		expect(read('A=one\nA=two\n').vars).toEqual({ A: 'two' });
 	});
