@@ -78,6 +78,20 @@ describe('readDotEnv', () => {
 		expect(dotEnv.malformedLines).toEqual([2, 3, 4, 5, 6, 7]);
 	});
 
+	it("counts a value with a NUL character as malformed, since a process can't get it in its environment", () => {
+		const dotEnv = read('A=one\nTOKEN=secret\0tail\nMULTI="first\nsecond\0"\nB=two\n');
+
+		expect(dotEnv.vars).toEqual({ A: 'one', B: 'two' });
+		expect(dotEnv.malformedLines).toEqual([2, 3]);
+	});
+
+	it("counts __proto__ as malformed, since the vars can't hold it", () => {
+		const dotEnv = read('__proto__=proto-value\nA=one\n');
+
+		expect(dotEnv.vars).toEqual({ A: 'one' });
+		expect(dotEnv.malformedLines).toEqual([1]);
+	});
+
 	it('ignores full-line comments and blank lines', () => {
 		expect(read('# a comment\n\nA=one\n  # indented comment\nB=two\n').vars).toEqual({ A: 'one', B: 'two' });
 	});
@@ -138,6 +152,16 @@ describe('readDotEnv', () => {
 		expect(process.memoryUsage().heapUsed - heapBefore).toBeLessThan(50 * 1024 * 1024);
 		expect(Object.keys(vars)).toHaveLength(5000);
 		expect(vars.KEY_4999).toBe('value number 4999 with some text');
+	});
+
+	it('reads a long run of spaces inside a line in linear time', () => {
+		const spaces = ' '.repeat(100_000);
+		const start = performance.now();
+
+		const { vars } = read(`TOKEN=abc${spaces}def\nQUOTED="abc${spaces}def"\n`);
+
+		expect(performance.now() - start).toBeLessThan(1000);
+		expect(vars).toEqual({ TOKEN: `abc${spaces}def`, QUOTED: `abc${spaces}def` });
 	});
 
 	it('keeps the last value of a duplicate key', () => {
