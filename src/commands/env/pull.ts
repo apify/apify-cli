@@ -5,6 +5,7 @@ import { YesFlag } from '../../lib/command-framework/flags.js';
 import {
 	checkDotEnvWritable,
 	describeMalformedLines,
+	describeUnwritableDotEnvValue,
 	ensureDotEnvGitignored,
 	readDotEnv,
 	updateDotEnvContent,
@@ -70,6 +71,7 @@ export class EnvPullCommand extends ApifyCommand<typeof EnvPullCommand> {
 		const unchanged: string[] = [];
 		const keptLocal: string[] = [];
 		const secretsEmpty: string[] = [];
+		const skippedValues: string[] = [];
 
 		for (const { name, isSecret, value = '' } of skipInvalidDotEnvNames(platform)) {
 			const isLocal = Object.hasOwn(dotEnv.vars, name);
@@ -81,14 +83,19 @@ export class EnvPullCommand extends ApifyCommand<typeof EnvPullCommand> {
 					added.push(name);
 					secretsEmpty.push(name);
 				}
-			} else if (!isLocal) {
-				updates[name] = value;
-				added.push(name);
-			} else if (dotEnv.vars[name] !== value) {
-				updates[name] = value;
-				updated.push(name);
-			} else {
+			} else if (isLocal && dotEnv.vars[name] === value) {
 				unchanged.push(name);
+			} else {
+				// A value that .env can't hold is skipped, so the other variables are still written.
+				const unwritable = describeUnwritableDotEnvValue(value);
+				if (unwritable) {
+					warning({ message: `Skipped the value of ${name}: ${unwritable}.` });
+					skippedValues.push(name);
+					continue;
+				}
+
+				updates[name] = value;
+				(isLocal ? updated : added).push(name);
 			}
 		}
 
@@ -96,7 +103,7 @@ export class EnvPullCommand extends ApifyCommand<typeof EnvPullCommand> {
 		const content = toWrite ? updateDotEnvContent(dotEnv.content, updates) : undefined;
 
 		if (dotEnv.exists && !toWrite) {
-			info({ message: '.env is already up to date.' });
+			info({ message: skippedValues.length ? 'Nothing else to write to .env.' : '.env is already up to date.' });
 		} else if (dotEnv.exists) {
 			const lines = [
 				...added.map((name) => ({
@@ -124,7 +131,11 @@ export class EnvPullCommand extends ApifyCommand<typeof EnvPullCommand> {
 				return;
 			}
 		} else if (!toWrite) {
-			info({ message: `No env vars on ${describeTarget(target)}, so no .env was written.` });
+			info({
+				message: platform.length
+					? `None of the env vars on ${describeTarget(target)} can be written to .env, so no .env was written.`
+					: `No env vars on ${describeTarget(target)}, so no .env was written.`,
+			});
 		}
 
 		const { added: gitignoreUpdated, tracked } = await ensureDotEnvGitignored(target.actorDir);
