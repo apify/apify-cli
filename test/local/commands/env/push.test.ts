@@ -466,6 +466,34 @@ describe('apify env push', () => {
 			expect(stderr()).toContain('Skipped DATABASE-URL, CLEAR\\x1b[2J, X\\x0a✔ Pushed 0 of 0 changes. Y: a name');
 			expect(`${stdout()}\n${stderr()}`).not.toContain('\n✔ Pushed 0 of 0 changes. Y');
 		});
+
+		it('keeps a platform var named __proto__ with --prune', async () => {
+			envVarsOnPlatform().push({ name: '__proto__', value: SECRET_VALUE, isSecret: true });
+			writeDotEnv('SAME=same-value\n');
+
+			await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_yes: true, flags_prune: true });
+
+			expect(process.exitCode).toBeUndefined();
+			expect(envPlatform.writes.map(({ method, name }) => `${method} ${name}`)).toEqual([
+				'delete API_KEY',
+				'delete CHANGED',
+				'delete OLD_VAR',
+			]);
+			expect(envVarOnPlatform('__proto__')).toEqual({ name: '__proto__', value: SECRET_VALUE, isSecret: true });
+			expect(stderr()).toContain('Skipped DATABASE-URL, CLEAR\\x1b[2J, __proto__: a name');
+		});
+
+		it('stops on a __proto__ line in .env before any write', async () => {
+			envVarsOnPlatform().push({ name: '__proto__', value: SECRET_VALUE, isSecret: true });
+			writeDotEnv('SAME=same-value\n__proto__=proto-value\n');
+
+			await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_yes: true, flags_prune: true });
+
+			expect(process.exitCode).toBe(5);
+			expect(envPlatform.writes).toEqual([]);
+			expect(stderr()).toContain('line 2 is malformed');
+			expect(stderr()).not.toContain('proto-value');
+		});
 	});
 
 	it('fails on a name that is too long before any write', async () => {
