@@ -539,7 +539,8 @@ ARGUMENTS
 DESCRIPTION
   Manages the Actor runtime, a self-contained local Apify platform running as a 
   container on Docker or Podman.
-  For setup and usage, see https://docs.apify.com/cli/docs/actor-runtime.
+  For setup and usage, see 
+  https://docs.apify.com/actors/development/test-and-debug/actor-runtime.
 
   NOTE: This command is experimental and might change in future releases.
 
