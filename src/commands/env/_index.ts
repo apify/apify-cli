@@ -1,5 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { EnvLsCommand } from './ls.js';
+import { EnvRmCommand } from './rm.js';
+import { EnvSetCommand } from './set.js';
 
 export class EnvIndexCommand extends ApifyCommand<typeof EnvIndexCommand> {
 	static override name = 'env' as const;
@@ -18,7 +20,7 @@ export class EnvIndexCommand extends ApifyCommand<typeof EnvIndexCommand> {
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-env';
 
-	static override subcommands = [EnvLsCommand];
+	static override subcommands = [EnvLsCommand, EnvSetCommand, EnvRmCommand];
 
 	async run() {
 		this.printHelp();
