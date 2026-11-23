@@ -5,6 +5,7 @@ import { YesFlag } from '../../lib/command-framework/flags.js';
 import {
 	checkDotEnvWritable,
 	ensureDotEnvGitignored,
+	isValidDotEnvName,
 	readDotEnv,
 	updateDotEnvContent,
 	writeDotEnv,
@@ -67,7 +68,14 @@ export class EnvPullCommand extends ApifyCommand<typeof EnvPullCommand> {
 		const keptLocal: string[] = [];
 		const secretsEmpty: string[] = [];
 
-		for (const { name, isSecret, value = '' } of platform) {
+		const invalidNames = platform.filter(({ name }) => !isValidDotEnvName(name)).map(({ name }) => name);
+		if (invalidNames.length) {
+			warning({
+				message: `Skipped ${invalidNames.join(', ')}: a name in .env can only have letters, digits, and underscores, and can't start with a digit.`,
+			});
+		}
+
+		for (const { name, isSecret, value = '' } of platform.filter((envVar) => isValidDotEnvName(envVar.name))) {
 			const isLocal = Object.hasOwn(dotEnv.vars, name);
 			if (isSecret) {
 				if (isLocal) {
