@@ -6,6 +6,7 @@ import process from 'node:process';
 
 import {
 	describeMalformedLines,
+	describeUnwritableDotEnvValue,
 	ensureDotEnvGitignored,
 	getDotEnvPath,
 	parseDotEnv,
@@ -235,8 +236,24 @@ describe('serializeDotEnvValue', () => {
 
 	it('fails for a value with single quotes, backticks, and \\n, which double quotes would change', () => {
 		expect(() => serializeDotEnvValue('NAME', "it's `a\\nb`")).toThrow(
-			"The value of NAME can't be written to .env so that it reads back the same.",
+			"The value of NAME can't be written to .env: it can't be quoted so that it reads back the same.",
 		);
+	});
+
+	it.each([
+		[
+			'a carriage return',
+			'line1\r\nline2',
+			"it has a carriage return, as in Windows line endings, which .env can't hold",
+		],
+		['a NUL character', 's3cr3t\0tail', "it has a NUL character, which .env can't hold"],
+	])('fails for a value with %s and gives the reason', (_, value, reason) => {
+		expect(() => serializeDotEnvValue('NAME', value)).toThrow(`The value of NAME can't be written to .env: ${reason}.`);
+		expect(describeUnwritableDotEnvValue(value)).toBe(reason);
+	});
+
+	it('describes no reason for a value that .env can hold', () => {
+		expect(describeUnwritableDotEnvValue("it's\nmulti-line")).toBeUndefined();
 	});
 
 	it('fails for a value that contains every quote character, without printing it', () => {

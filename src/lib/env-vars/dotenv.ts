@@ -147,26 +147,35 @@ export function readDotEnv(actorDir: string): DotEnvFile {
 	return { path, exists: true, content, ...parseDotEnv(content) };
 }
 
+const dotEnvValueCandidates = (value: string) => [
+	...(/^[^\s#'"`]*$/.test(value) ? [value] : []),
+	...(value.includes("'") ? [] : [`'${value}'`]),
+	...(value.includes('`') ? [] : [`\`${value}\``]),
+	...(value.includes('"') ? [] : [`"${value}"`]),
+];
+
+const findDotEnvValue = (value: string) =>
+	dotEnvValueCandidates(value).find((candidate) => parseDotEnv(`K=${candidate}`).vars.K === value);
+
+/** Why .env can't hold the value so that it reads back the same, or undefined when it can. It never quotes the value. */
+export function describeUnwritableDotEnvValue(value: string): string | undefined {
+	if (findDotEnvValue(value) !== undefined) return undefined;
+
+	if (value.includes('\r')) return "it has a carriage return, as in Windows line endings, which .env can't hold";
+	if (value.includes('\0')) return "it has a NUL character, which .env can't hold";
+	if (!dotEnvValueCandidates(value).length) return 'it contains every quote character';
+	return "it can't be quoted so that it reads back the same";
+}
+
 /**
  * The value as it goes after `NAME=` in .env, so that parsing it gives the value back. Values that need it are quoted
  * with ' or `, which keep the value literal. Double quotes, which turn \n into a new line, are the last resort for a
  * value that contains both, and only when the value reads back the same. `name` only names the variable in the error.
  */
 export function serializeDotEnvValue(name: string, value: string): string {
-	const candidates = [
-		...(/^[^\s#'"`]*$/.test(value) ? [value] : []),
-		...(value.includes("'") ? [] : [`'${value}'`]),
-		...(value.includes('`') ? [] : [`\`${value}\``]),
-		...(value.includes('"') ? [] : [`"${value}"`]),
-	];
-
-	const serialized = candidates.find((candidate) => parseDotEnv(`K=${candidate}`).vars.K === value);
+	const serialized = findDotEnvValue(value);
 	if (serialized === undefined) {
-		envFail(
-			candidates.length
-				? `The value of ${name} can't be written to .env so that it reads back the same.`
-				: `The value of ${name} can't be written to .env: it contains every quote character.`,
-		);
+		envFail(`The value of ${name} can't be written to .env: ${describeUnwritableDotEnvValue(value)}.`);
 	}
 
 	return serialized;
