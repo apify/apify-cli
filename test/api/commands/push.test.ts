@@ -235,14 +235,21 @@ describe('[api] apify push', () => {
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 
-			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
-			actorJson.environmentVariables = {};
-			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+			const originalActorJson = readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8');
+			try {
+				const actorJson = JSON.parse(originalActorJson);
+				actorJson.environmentVariables = {};
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
-			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+				await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_force: true });
 
-			const testActorVersion = await testActorClient.version(actorJson.version).get();
-			expect(testActorVersion!.envVars).to.be.eql(existingEnvVars);
+				const testActorVersion = await testActorClient.version(actorJson.version).get();
+				// The Actor was created without source files, so this proves the push updated the version.
+				expect((testActorVersion as any).sourceFiles).not.toHaveLength(0);
+				expect(testActorVersion!.envVars).to.be.eql(existingEnvVars);
+			} finally {
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), originalActorJson, { flag: 'w' });
+			}
 		},
 		TEST_TIMEOUT,
 	);
@@ -268,9 +275,11 @@ describe('[api] apify push', () => {
 				const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 				expect(actorJson).not.toHaveProperty('environmentVariables');
 
-				await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+				await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_force: true });
 
 				const testActorVersion = await testActorClient.version(actorJson.version).get();
+				// The Actor was created without source files, so this proves the push updated the version.
+				expect((testActorVersion as any).sourceFiles).not.toHaveLength(0);
 				expect(testActorVersion!.envVars).to.be.eql(existingEnvVars);
 			} finally {
 				writeFileSync(joinPath(LOCAL_CONFIG_PATH), originalActorJson, { flag: 'w' });
