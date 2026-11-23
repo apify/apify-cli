@@ -349,7 +349,7 @@ describe('apify env push', () => {
 		expectNoValues(instance);
 	});
 
-	it('skips malformed .env lines and names them only by number', async () => {
+	it('fails on malformed .env lines before any write and names them only by number', async () => {
 		writeDotEnv(`NEW_VAR=x\nNO_EQUALS_SIGN\nBAD-NAME=${PLAIN_VALUE}\n`);
 
 		const instance = await testRunCommand(EnvPushCommand, {
@@ -358,12 +358,57 @@ describe('apify env push', () => {
 			flags_json: true,
 		});
 
-		expect(process.exitCode).toBeUndefined();
-		expect(envPlatform.writes.map(({ name }) => name)).toEqual(['NEW_VAR']);
-		expect(stderr()).toContain(`Skipped 2 malformed lines in ${join(actorDir, '.env')} (lines 2, 3).`);
-		expect(`${stdout()}\n${stderr()}`).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME/);
+		expect(process.exitCode).toBe(5);
+		expect(envPlatform.writes).toEqual([]);
+		expect(stdout()).toBe('');
+		expect(stderr()).toContain(`Can't push ${join(actorDir, '.env')}: lines 2, 3 are malformed.`);
+		expect(stderr()).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME/);
 		expectNoValues(instance);
 	});
+
+	// Secret material from unquoted multi-line values and a stray line: no part of them may be pushed or printed.
+	const PEM_TAIL = 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7secretmaterialQ';
+	const MALFORMED_DOTENVS = {
+		'an unquoted PEM key': {
+			content: `PLAIN=${PLAIN_VALUE}\nKEY=-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgk+qhkiG9w0BAQEFAA/SCBKcwggSjAgEA\n${PEM_TAIL}==\n-----END PRIVATE KEY-----\n`,
+			lines: 'lines 3, 5 are',
+			material: [PEM_TAIL, 'MIIEvQIBADANBgk', 'BEGIN PRIVATE KEY'],
+		},
+		'an unquoted service account JSON': {
+			content: `PLAIN=${PLAIN_VALUE}\nGOOGLE_CREDENTIALS={\n  "type": "service_account",\n  "private_key": "-----BEGIN PRIVATE KEY-----\\nsa-key-material==\\n-----END PRIVATE KEY-----\\n",\n}\n`,
+			lines: 'lines 3, 4, 5 are',
+			material: ['sa-key-material', 'private_key', 'GOOGLE_CREDENTIALS'],
+		},
+		'a stray connection string': {
+			content: `PLAIN=${PLAIN_VALUE}\npostgres://admin:hunter2@db/app?sslmode=require\n`,
+			lines: 'line 2 is',
+			material: ['hunter2', 'postgres'],
+		},
+	};
+
+	it.each(
+		Object.entries(MALFORMED_DOTENVS).flatMap(([name, dotEnv]) => [
+			{ name, json: false, ...dotEnv },
+			{ name, json: true, ...dotEnv },
+		]),
+	)(
+		'fails without pushing or printing any part of $name (--json: $json)',
+		async ({ content, lines, material, json }) => {
+			writeDotEnv(content);
+
+			const instance = await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_yes: true, flags_json: json });
+
+			expect(process.exitCode).toBe(5);
+			expect(envPlatform.writes).toEqual([]);
+			expect(stdout()).toBe('');
+			expect(stderr()).toContain(`Can't push ${join(actorDir, '.env')}: ${lines} malformed.`);
+			for (const text of material) {
+				expect(stderr()).not.toContain(text);
+				expect(JSON.stringify((instance as unknown as Record<string, unknown>).telemetryData)).not.toContain(text);
+			}
+			expectNoValues(instance);
+		},
+	);
 
 	it('fails on a name that is too long before any write', async () => {
 		writeDotEnv(`${'A'.repeat(101)}=x\nNEW_VAR=x\n`);
