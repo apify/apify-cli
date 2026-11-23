@@ -215,6 +215,40 @@ describe('apify env diff', () => {
 			expect(process.exitCode).toBeUndefined();
 			expect(JSON.parse(stdout())).toMatchObject({ inSync: true, onlyOnPlatform: [] });
 		});
+
+		it('escapes a newline in a skipped name, so the warning stays on one line', async () => {
+			envPlatform.state.actors[0].versions[0].envVars.push({
+				name: 'X\n✔ Pushed 0 of 0 changes. Y',
+				value: 'x',
+				isSecret: false,
+			});
+
+			await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
+
+			expect(process.exitCode).toBeUndefined();
+			expect(stderr()).toContain('Skipped DATABASE-URL, CLEAR\\x1b[2J, X\\x0a✔ Pushed 0 of 0 changes. Y: a name');
+			expect(`${stdout()}\n${stderr()}`).not.toContain('\n✔ Pushed 0 of 0 changes. Y');
+		});
+
+		it("is in sync with a platform var named __proto__, which .env can't hold", async () => {
+			envPlatform.state.actors[0].versions[0].envVars.push({ name: '__proto__', value: SECRET_VALUE, isSecret: true });
+
+			await testRunCommand(EnvDiffCommand, { flags_dir: actorDir, flags_json: true });
+
+			expect(process.exitCode).toBeUndefined();
+			expect(JSON.parse(stdout())).toMatchObject({ inSync: true, onlyOnPlatform: [] });
+			expect(stderr()).toContain('Skipped DATABASE-URL, CLEAR\\x1b[2J, __proto__: a name');
+		});
+
+		it('stops on a __proto__ line in .env', async () => {
+			writeDotEnv(`PLAIN=${PLAIN_VALUE}\nAPI_KEY=\n__proto__=proto-value\n`);
+
+			await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
+
+			expect(process.exitCode).toBe(5);
+			expect(stderr()).toContain('line 3 is malformed');
+			expect(`${stdout()}\n${stderr()}`).not.toContain('proto-value');
+		});
 	});
 
 	it('compares the version from actor.json', async () => {

@@ -6,6 +6,7 @@ import process from 'node:process';
 
 import {
 	describeMalformedLines,
+	describeUnwritableDotEnvValue,
 	ensureDotEnvGitignored,
 	getDotEnvPath,
 	parseDotEnv,
@@ -91,6 +92,20 @@ describe('readDotEnv', () => {
 		expect(dotEnv.malformedLines).toEqual([2, 3, 4, 5, 6, 7]);
 	});
 
+	it("counts a value with a NUL character as malformed, since a process can't get it in its environment", () => {
+		const dotEnv = read('A=one\nTOKEN=secret\0tail\nMULTI="first\nsecond\0"\nB=two\n');
+
+		expect(dotEnv.vars).toEqual({ A: 'one', B: 'two' });
+		expect(dotEnv.malformedLines).toEqual([2, 3]);
+	});
+
+	it("counts __proto__ as malformed, since the vars can't hold it", () => {
+		const dotEnv = read('__proto__=proto-value\nA=one\n');
+
+		expect(dotEnv.vars).toEqual({ A: 'one' });
+		expect(dotEnv.malformedLines).toEqual([1]);
+	});
+
 	it('ignores full-line comments and blank lines', () => {
 		expect(read('# a comment\n\nA=one\n  # indented comment\nB=two\n').vars).toEqual({ A: 'one', B: 'two' });
 	});
@@ -153,6 +168,16 @@ describe('readDotEnv', () => {
 		expect(vars.KEY_4999).toBe('value number 4999 with some text');
 	});
 
+	it('reads a long run of spaces inside a line in linear time', () => {
+		const spaces = ' '.repeat(100_000);
+		const start = performance.now();
+
+		const { vars } = read(`TOKEN=abc${spaces}def\nQUOTED="abc${spaces}def"\n`);
+
+		expect(performance.now() - start).toBeLessThan(1000);
+		expect(vars).toEqual({ TOKEN: `abc${spaces}def`, QUOTED: `abc${spaces}def` });
+	});
+
 	it('keeps the last value of a duplicate key', () => {
 		expect(read('A=one\nA=two\n').vars).toEqual({ A: 'two' });
 	});
@@ -211,8 +236,24 @@ describe('serializeDotEnvValue', () => {
 
 	it('fails for a value with single quotes, backticks, and \\n, which double quotes would change', () => {
 		expect(() => serializeDotEnvValue('NAME', "it's `a\\nb`")).toThrow(
-			"The value of NAME can't be written to .env so that it reads back the same.",
+			"The value of NAME can't be written to .env: it can't be quoted so that it reads back the same.",
 		);
+	});
+
+	it.each([
+		[
+			'a carriage return',
+			'line1\r\nline2',
+			"it has a carriage return, as in Windows line endings, which .env can't hold",
+		],
+		['a NUL character', 's3cr3t\0tail', "it has a NUL character, which .env can't hold"],
+	])('fails for a value with %s and gives the reason', (_, value, reason) => {
+		expect(() => serializeDotEnvValue('NAME', value)).toThrow(`The value of NAME can't be written to .env: ${reason}.`);
+		expect(describeUnwritableDotEnvValue(value)).toBe(reason);
+	});
+
+	it('describes no reason for a value that .env can hold', () => {
+		expect(describeUnwritableDotEnvValue("it's\nmulti-line")).toBeUndefined();
 	});
 
 	it('fails for a value that contains every quote character, without printing it', () => {
@@ -260,6 +301,16 @@ describe('updateDotEnvContent', () => {
 
 		expect(result).toBe("A='x\ny'\nB=z\n");
 		expect(parseDotEnv(result).vars).toEqual({ A: 'x\ny', B: 'z' });
+	});
+
+	it('finds the ends of thousands of multi-line values in linear time', () => {
+		const lines = Array.from({ length: 100_000 }, (_, i) => `KEY_${i}='first\nsecond'\n`);
+		const start = performance.now();
+
+		const result = updateDotEnvContent(lines.join(''), { KEY_99999: 'x', NEW: 'y' });
+
+		expect(performance.now() - start).toBeLessThan(2000);
+		expect(result).toBe(`${lines.slice(0, -1).join('')}KEY_99999=x\nNEW=y\n`);
 	});
 
 	it('adds a missing final newline before appending', () => {

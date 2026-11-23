@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { ACTOR_SOURCE_TYPES } from '@apify/consts';
+import { ActorSourceType } from 'apify-client';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { testUserClient } from '../../__setup__/config.js';
@@ -49,7 +49,7 @@ describe('[api] apify env push', () => {
 			versions: [
 				{
 					versionNumber: '0.0',
-					sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES as never,
+					sourceType: ActorSourceType.SourceFiles,
 					buildTag: 'latest',
 					sourceFiles: [],
 					envVars: [

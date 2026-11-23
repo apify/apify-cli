@@ -3,7 +3,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { envFail } from '../../lib/env-vars/errors.js';
 import { envTargetFlags } from '../../lib/env-vars/flags.js';
-import { describeTarget, escapeControlChars, printRebuildReminder, targetJson } from '../../lib/env-vars/output.js';
+import { describeTarget, escapeName, printRebuildReminder, targetJson } from '../../lib/env-vars/output.js';
 import {
 	createPlatformEnvVar,
 	getPlatformEnvVar,
@@ -70,7 +70,7 @@ export class EnvSetCommand extends ApifyCommand<typeof EnvSetCommand> {
 		const { name } = this.args;
 
 		validateEnvVarName(name);
-		const shownName = escapeControlChars(name);
+		const shownName = escapeName(name);
 
 		const target = await resolveEnvTarget(this.flags);
 		const existing = await getPlatformEnvVar(target, name);
