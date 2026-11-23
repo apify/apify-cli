@@ -101,7 +101,7 @@ describe('apify env ls', () => {
 	it('says when the version has no env vars', async () => {
 		await testRunCommand(EnvLsCommand, { flags_actor: 'tester/my-actor', flags_version: '1.0' });
 
-		expect(logMessages.log.join('\n')).toContain('No env vars on tester/my-actor version 1.0.');
+		expect(logMessages.log).toEqual(['No env vars on tester/my-actor version 1.0.']);
 	});
 
 	it('prints an empty list with --json', async () => {
