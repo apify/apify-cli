@@ -9,6 +9,8 @@ import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 useIsolatedGit('utils-dotenv-git-home');
 
 const DOTENV_FILES = ['.env', '.env.local', '.env.production', 'src/.env', '.actor/.env', '.actor/.env.local'];
+// An Actor folder of their own: on macOS and Windows, `.ENV` and `.env` in one folder are the same file.
+const OTHER_CASE_DOTENV_FILES = ['.ENV', '.Env.local', '.actor/.ENV'];
 const KEPT_FILES = [
 	'main.js',
 	'.actor/actor.json',
@@ -20,7 +22,7 @@ const KEPT_FILES = [
 ];
 
 describe('isDotEnvFile', () => {
-	it.each(DOTENV_FILES)('is true for %s', (filePath) => {
+	it.each([...DOTENV_FILES, ...OTHER_CASE_DOTENV_FILES])('is true for %s', (filePath) => {
 		expect(isDotEnvFile(filePath)).toBe(true);
 	});
 
@@ -48,8 +50,13 @@ describe('getActorLocalFilePaths - .env files (git)', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		for (const actor of ['plain', 'negated']) {
-			for (const file of [...DOTENV_FILES, ...KEPT_FILES]) {
+		const actorFiles = {
+			plain: [...DOTENV_FILES, ...KEPT_FILES],
+			negated: [...DOTENV_FILES, ...KEPT_FILES],
+			'other-case': [...OTHER_CASE_DOTENV_FILES, 'main.js'],
+		};
+		for (const [actor, files] of Object.entries(actorFiles)) {
+			for (const file of files) {
 				write(actor, file);
 			}
 			// The Actor's own repository, so the ignore rules of this checkout don't apply.
@@ -83,6 +90,15 @@ describe('getActorLocalFilePaths - .env files (git)', () => {
 
 		expect(paths).toContain('main.js');
 		for (const file of DOTENV_FILES) {
+			expect(paths).not.toContain(file);
+		}
+	});
+
+	it('leaves out .env files named in another letter case', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('other-case'));
+
+		expect(paths).toContain('main.js');
+		for (const file of OTHER_CASE_DOTENV_FILES) {
 			expect(paths).not.toContain(file);
 		}
 	});
