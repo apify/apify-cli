@@ -16,9 +16,20 @@ import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 useIsolatedGit('utils-dotenv-git-home');
 
 const DOTENV_FILES = ['.env', '.env.local', '.env.production', 'src/.env', '.actor/.env', '.actor/.env.local'];
+// An Actor folder of their own: on macOS and Windows, `.ENV` and `.env` in one folder are the same file.
+const OTHER_CASE_DOTENV_FILES = ['.ENV', '.Env.local', '.actor/.ENV'];
+const KEPT_FILES = [
+	'main.js',
+	'.actor/actor.json',
+	'.env.example',
+	'.actor/.env.example',
+	'.envrc',
+	'my.env',
+	'env.json',
+];
 
 describe('isDotEnvFile', () => {
-	it.each(DOTENV_FILES)('is true for %s', (filePath) => {
+	it.each([...DOTENV_FILES, ...OTHER_CASE_DOTENV_FILES])('is true for %s', (filePath) => {
 		expect(isDotEnvFile(filePath)).toBe(true);
 	});
 
@@ -46,13 +57,19 @@ describe('getActorLocalFilePaths - .env files (git)', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		for (const actor of ['plain', 'negated']) {
-			for (const file of [...DOTENV_FILES, '.env.example', 'main.js', '.actor/actor.json', '.gitignore']) {
+		const actorFiles = {
+			plain: [...DOTENV_FILES, ...KEPT_FILES],
+			negated: [...DOTENV_FILES, ...KEPT_FILES],
+			'other-case': [...OTHER_CASE_DOTENV_FILES, 'main.js'],
+		};
+		for (const [actor, files] of Object.entries(actorFiles)) {
+			for (const file of files) {
 				write(actor, file);
 			}
 			// The Actor's own repository, so the ignore rules of this checkout don't apply.
 			execFileSync('git', ['init', '--quiet'], { cwd: joinPath(actor), stdio: 'ignore' });
 		}
+		writeFileSync(joinPath('plain', '.gitignore'), 'node_modules\n');
 		// Git-ignored, as apify init and apify create set it up, so only the negation could bring them back.
 		writeFileSync(joinPath('negated', '.gitignore'), '.env\n.env.local\n');
 		writeFileSync(joinPath('negated', '.actorignore'), '!.env\n!.env.local\n');
@@ -65,18 +82,32 @@ describe('getActorLocalFilePaths - .env files (git)', () => {
 	it('leaves out .env files that Git does not ignore, in the root, below it and under .actor/', async () => {
 		const paths = await getActorLocalFilePaths(joinPath('plain'));
 
-		expect(paths).toEqual(expect.arrayContaining(['main.js', '.actor/actor.json', '.env.example']));
+		expect(paths).toContain('main.js');
 		for (const file of DOTENV_FILES) {
 			expect(paths).not.toContain(file);
 		}
+	});
+
+	it.each(KEPT_FILES)('keeps %s', async (file) => {
+		expect(await getActorLocalFilePaths(joinPath('plain'))).toContain(file);
 	});
 
 	it('leaves out .env files that .actorignore negates', async () => {
 		const paths = await getActorLocalFilePaths(joinPath('negated'));
 
 		expect(paths).toContain('main.js');
-		expect(paths).not.toContain('.env');
-		expect(paths).not.toContain('.env.local');
+		for (const file of DOTENV_FILES) {
+			expect(paths).not.toContain(file);
+		}
+	});
+
+	it('leaves out .env files named in another letter case', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('other-case'));
+
+		expect(paths).toContain('main.js');
+		for (const file of OTHER_CASE_DOTENV_FILES) {
+			expect(paths).not.toContain(file);
+		}
 	});
 });
 

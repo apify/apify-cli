@@ -352,10 +352,10 @@ describe('apify push of a monorepo Actor', () => {
 	});
 
 	it('sends a link to a file the upload holds as that file and leaves out one to a file the upload lacks', async () => {
-		// A workspace package shares the root .env, which only the root .gitignore line covers.
+		// A workspace package links the root .env under a name no .gitignore line or .env check covers.
 		await write('.gitignore', 'node_modules\n/.env\n');
 		await write('.env', 'API_TOKEN=secret\n');
-		symlinkSync('../../.env', joinPath('packages/typescript-utils/.env'));
+		symlinkSync('../../.env', joinPath('packages/typescript-utils/secrets.txt'));
 		symlinkSync('../.git/config', joinPath('shared/git-config'));
 		symlinkSync('../package.json', joinPath('shared/package.json'));
 		git('add', '.');
@@ -365,7 +365,7 @@ describe('apify push of a monorepo Actor', () => {
 		expect(commandProcess.exitCode).toBeFalsy();
 		const files = versionPayload(versionUpdate).sourceFiles!;
 		const names = files.map((file) => file.name);
-		expect(names).not.toContain('packages/typescript-utils/.env');
+		expect(names).not.toContain('packages/typescript-utils/secrets.txt');
 		expect(names).not.toContain('shared/git-config');
 		expect(files.find((file) => file.name === 'shared/package.json')?.content).toContain('workspaces');
 	});
