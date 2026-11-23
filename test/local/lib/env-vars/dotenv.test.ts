@@ -78,6 +78,13 @@ describe('readDotEnv', () => {
 		expect(dotEnv.malformedLines).toEqual([2, 3, 4, 5, 6, 7]);
 	});
 
+	it("counts a value with a NUL character as malformed, since a process can't get it in its environment", () => {
+		const dotEnv = read('A=one\nTOKEN=secret\0tail\nMULTI="first\nsecond\0"\nB=two\n');
+
+		expect(dotEnv.vars).toEqual({ A: 'one', B: 'two' });
+		expect(dotEnv.malformedLines).toEqual([2, 3]);
+	});
+
 	it('ignores full-line comments and blank lines', () => {
 		expect(read('# a comment\n\nA=one\n  # indented comment\nB=two\n').vars).toEqual({ A: 'one', B: 'two' });
 	});
