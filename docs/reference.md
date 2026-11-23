@@ -460,6 +460,8 @@ FLAGS
 DESCRIPTION
   Executes Actor locally with simulated Apify environment variables.
   Stores data in local 'storage' directory.
+  Loads variables from a '.env' file in the Actor directory; they override the 
+  other sources.
 
   NOTE: For Node.js Actors, customize behavior by modifying the 'start' script 
   in package.json file.
