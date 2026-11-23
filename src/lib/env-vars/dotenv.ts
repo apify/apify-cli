@@ -10,8 +10,11 @@ export interface DotEnvFile {
 	/** Empty when the file doesn't exist. */
 	content: string;
 	vars: Record<string, string>;
+	/** 1-based numbers of the lines that aren't a `NAME=value` assignment with a valid name. They aren't in `vars`. */
+	malformedLines: number[];
 }
 
+const VALID_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const QUOTES = ['"', "'", '`'];
 
 const trimSpaces = (text: string) => text.replace(/^[ \t]+|[ \t]+$/g, '');
@@ -19,20 +22,26 @@ const trimSpaces = (text: string) => text.replace(/^[ \t]+|[ \t]+$/g, '');
 /**
  * Parses .env content like `util.parseEnv` on Node.js 22.16 and later, on every Node.js version: on 22.1 to 22.15 and
  * 23, `util.parseEnv` turns a line without `=`, an indented comment, or `=` in a last-line value into wrong variables.
- * Unlike `util.parseEnv`, a line without a name is skipped, a value of only spaces is empty instead of taking the next
- * line, `export NAME=` sets `NAME`, and an indented comment is always a comment.
+ * Unlike `util.parseEnv`, a value of only spaces is empty instead of taking the next line, `export NAME=` sets `NAME`,
+ * and an indented comment is always a comment. A line that isn't `NAME=value` with a valid env var name isn't in
+ * `vars`: only its number is kept, so its content is never printed.
  */
-export function parseDotEnv(content: string): Record<string, string> {
+export function parseDotEnv(content: string): Pick<DotEnvFile, 'vars' | 'malformedLines'> {
 	const lines = content.replaceAll('\r', '').split('\n');
 	const vars: Record<string, string> = {};
+	const malformedLines: number[] = [];
 
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
 		const trimmed = trimSpaces(line);
 		if (!trimmed || trimmed.startsWith('#')) continue;
 
+		const lineNumber = i + 1;
 		const equals = line.indexOf('=');
-		if (equals === -1) continue;
+		if (equals === -1) {
+			malformedLines.push(lineNumber);
+			continue;
+		}
 
 		const name = trimSpaces(line.slice(0, equals)).replace(/^export[ \t]+/, '');
 		const raw = line.slice(equals + 1).replace(/^[ \t]+/, '');
@@ -41,7 +50,7 @@ export function parseDotEnv(content: string): Record<string, string> {
 		let value = trimSpaces(raw.split('#')[0]);
 		if (QUOTES.includes(quote)) {
 			// A quoted value runs to the closing quote, also on a later line, and the rest of that line is ignored.
-			// Without a closing quote, the value is the rest of the line as it is.
+			// Without a closing quote, the value is the rest of the line, quote included.
 			const rest = [raw.slice(1), ...lines.slice(i + 1)].join('\n');
 			const end = rest.indexOf(quote);
 			if (end === -1) {
@@ -53,10 +62,22 @@ export function parseDotEnv(content: string): Record<string, string> {
 			}
 		}
 
-		if (name) vars[name] = value;
+		if (VALID_NAME.test(name)) vars[name] = value;
+		else malformedLines.push(lineNumber);
 	}
 
-	return vars;
+	return { vars, malformedLines };
+}
+
+/** A warning that names the malformed lines of .env by number, or undefined when there are none. */
+export function describeMalformedLines({
+	path,
+	malformedLines,
+}: Pick<DotEnvFile, 'path' | 'malformedLines'>): string | undefined {
+	if (!malformedLines.length) return undefined;
+
+	const lines = malformedLines.length === 1 ? 'line' : 'lines';
+	return `Skipped ${malformedLines.length} malformed ${lines} in ${path} (${lines} ${malformedLines.join(', ')}).`;
 }
 
 export function getDotEnvPath(actorDir: string): string {
@@ -75,12 +96,13 @@ export function readDotEnv(actorDir: string): DotEnvFile {
 		content = readFileSync(path, 'utf8');
 	} catch (err) {
 		const { code, message } = err as NodeJS.ErrnoException;
-		if (code === 'ENOENT' || code === 'EISDIR') return { path, exists: false, content: '', vars: {} };
+		if (code === 'ENOENT' || code === 'EISDIR')
+			return { path, exists: false, content: '', vars: {}, malformedLines: [] };
 		envFail(`Couldn't read ${path}: ${message}`);
 	}
 
 	// Editors on Windows can save a UTF-8 byte order mark, which would otherwise become part of the first name.
 	content = content.replace(/^\uFEFF/, '');
 
-	return { path, exists: true, content, vars: parseDotEnv(content) };
+	return { path, exists: true, content, ...parseDotEnv(content) };
 }

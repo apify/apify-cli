@@ -23,7 +23,7 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
-import { readDotEnv } from '../lib/env-vars/dotenv.js';
+import { describeMalformedLines, readDotEnv } from '../lib/env-vars/dotenv.js';
 import { execWithLog } from '../lib/exec.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
@@ -235,7 +235,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const { config: localConfig } = localConfigResult.unwrap();
 
 		// Read .env before purging storage or writing input, so an unreadable file stops the run with nothing changed.
-		const dotEnvVars = readDotEnv(cwd).vars;
+		const dotEnv = readDotEnv(cwd);
+		const malformedLinesWarning = describeMalformedLines(dotEnv);
+		if (malformedLinesWarning) warning({ message: malformedLinesWarning });
+		const dotEnvVars = dotEnv.vars;
 		cliDebugPrint('[run] loaded .env', { keys: Object.keys(dotEnvVars).length });
 
 		if (localConfig!.usesStandbyMode && !this.flags.server) {

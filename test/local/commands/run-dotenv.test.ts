@@ -26,7 +26,14 @@ const { logMessages } = useConsoleSpy();
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { RunCommand } = await import('../../../src/commands/run.js');
 
-const RECORDED_VARS = ['FROM_SHELL', 'CRAWLEE_PURGE_ON_START', 'FROM_ACTOR_JSON', 'FROM_DOTENV', 'SECRET_REF'];
+const RECORDED_VARS = [
+	'FROM_SHELL',
+	'CRAWLEE_PURGE_ON_START',
+	'FROM_ACTOR_JSON',
+	'FROM_DOTENV',
+	'SECRET_REF',
+	'BAD-NAME',
+];
 
 describe('apify run with .env', () => {
 	let originalActorJson: string;
@@ -125,6 +132,18 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 		writeFileSync(joinPath('.env'), 'SECRET_REF=@foo\n');
 
 		expect((await runAndReadEnv()).SECRET_REF).toBe('@foo');
+	});
+
+	it('skips malformed .env lines and names them only by number', async () => {
+		writeFileSync(joinPath('.env'), 'FROM_DOTENV=dotenv\nNO_EQUALS_SIGN\nBAD-NAME=bad-value\n');
+
+		const env = await runAndReadEnv();
+
+		expect(env.FROM_DOTENV).toBe('dotenv');
+		expect(env['BAD-NAME']).toBeNull();
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toContain(`Skipped 2 malformed lines in ${joinPath('.env')} (lines 2, 3).`);
+		expect(stderr).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME|bad-value/);
 	});
 
 	it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(

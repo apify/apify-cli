@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { getDotEnvPath, readDotEnv } from '../../../../src/lib/env-vars/dotenv.js';
+import { describeMalformedLines, getDotEnvPath, readDotEnv } from '../../../../src/lib/env-vars/dotenv.js';
 
 describe('readDotEnv', () => {
 	let actorDir: string;
@@ -23,13 +23,25 @@ describe('readDotEnv', () => {
 	};
 
 	it('returns no vars when .env is missing', () => {
-		expect(readDotEnv(actorDir)).toEqual({ path: join(actorDir, '.env'), exists: false, content: '', vars: {} });
+		expect(readDotEnv(actorDir)).toEqual({
+			path: join(actorDir, '.env'),
+			exists: false,
+			content: '',
+			vars: {},
+			malformedLines: [],
+		});
 	});
 
 	it('treats a .env directory, such as a Python virtual environment, as no .env', () => {
 		mkdirSync(join(actorDir, '.env', 'bin'), { recursive: true });
 
-		expect(readDotEnv(actorDir)).toEqual({ path: join(actorDir, '.env'), exists: false, content: '', vars: {} });
+		expect(readDotEnv(actorDir)).toEqual({
+			path: join(actorDir, '.env'),
+			exists: false,
+			content: '',
+			vars: {},
+			malformedLines: [],
+		});
 		expect(process.exitCode).toBeUndefined();
 	});
 
@@ -41,7 +53,29 @@ describe('readDotEnv', () => {
 			exists: true,
 			content,
 			vars: { A: 'one', B: 'two' },
+			malformedLines: [],
 		});
+	});
+
+	it('leaves malformed lines out of the vars and keeps only their numbers', () => {
+		const dotEnv = read(
+			[
+				'A=one',
+				'JUNK',
+				'=no-name',
+				'1BAD=x',
+				'BAD-NAME=y',
+				'with space=z',
+				"BAD.NAME='first",
+				'second',
+				"third'",
+				'export B=two',
+				'',
+			].join('\n'),
+		);
+
+		expect(dotEnv.vars).toEqual({ A: 'one', B: 'two' });
+		expect(dotEnv.malformedLines).toEqual([2, 3, 4, 5, 6, 7]);
 	});
 
 	it('ignores full-line comments and blank lines', () => {
@@ -121,4 +155,19 @@ describe('readDotEnv', () => {
 			expect(process.exitCode).toBe(5);
 		},
 	);
+});
+
+describe('describeMalformedLines', () => {
+	it('names the malformed lines by number', () => {
+		expect(describeMalformedLines({ path: '/actor/.env', malformedLines: [3, 7] })).toBe(
+			'Skipped 2 malformed lines in /actor/.env (lines 3, 7).',
+		);
+		expect(describeMalformedLines({ path: '/actor/.env', malformedLines: [2] })).toBe(
+			'Skipped 1 malformed line in /actor/.env (line 2).',
+		);
+	});
+
+	it('returns undefined when no line is malformed', () => {
+		expect(describeMalformedLines({ path: '/actor/.env', malformedLines: [] })).toBeUndefined();
+	});
 });
