@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
@@ -82,6 +82,18 @@ describe('readLegacySecrets', () => {
 		expect(() => readLegacySecrets()).not.toThrow('s3cr3t-sentinel');
 		expect(process.exitCode).toBe(5);
 	});
+
+	it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+		"fails with the error code when the file can't be read",
+		() => {
+			mkdirSync(dirname(SECRETS_FILE_PATH()), { recursive: true });
+			writeFileSync(SECRETS_FILE_PATH(), '{}');
+			chmodSync(SECRETS_FILE_PATH(), 0o000);
+
+			expect(() => readLegacySecrets()).toThrow(new Error(`Couldn't read ${SECRETS_FILE_PATH()} (EACCES).`));
+			expect(process.exitCode).toBe(5);
+		},
+	);
 });
 
 describe('readActorJsonDocument', () => {
@@ -105,6 +117,17 @@ describe('readActorJsonDocument', () => {
 
 		expect(() => readActorJsonDocument(dir)).toThrow(`${actorJsonPath()} doesn't hold a JSON object.`);
 	});
+
+	it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+		"fails with the error code when the file can't be read",
+		() => {
+			writeActorJson('{}');
+			chmodSync(actorJsonPath(), 0o000);
+
+			expect(() => readActorJsonDocument(dir)).toThrow(new Error(`Couldn't read ${actorJsonPath()} (EACCES).`));
+			expect(process.exitCode).toBe(5);
+		},
+	);
 });
 
 describe('removeEnvironmentVariablesFromActorJson', () => {
