@@ -216,6 +216,7 @@ describe('apify env push', () => {
 
 		expect(process.exitCode).toBe(5);
 		expect(stderr()).toContain(`No .env file in ${actorDir}.`);
+		expect(stderr()).toContain('run apify env pull to start from the platform values.');
 		expect(envPlatform.writes).toEqual([]);
 	});
 

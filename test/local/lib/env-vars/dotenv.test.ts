@@ -1,9 +1,23 @@
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { describeMalformedLines, getDotEnvPath, readDotEnv } from '../../../../src/lib/env-vars/dotenv.js';
+import {
+	describeMalformedLines,
+	describeUnwritableDotEnvValue,
+	ensureDotEnvGitignored,
+	getDotEnvPath,
+	parseDotEnv,
+	readDotEnv,
+	serializeDotEnvValue,
+	updateDotEnvContent,
+	writeDotEnv,
+} from '../../../../src/lib/env-vars/dotenv.js';
+import { useIsolatedGit } from '../../../__setup__/hooks/useIsolatedGit.js';
+
+useIsolatedGit('dotenv-test-git-home');
 
 describe('readDotEnv', () => {
 	let actorDir: string;
@@ -194,6 +208,219 @@ describe('readDotEnv', () => {
 			expect(process.exitCode).toBe(5);
 		},
 	);
+});
+
+describe('serializeDotEnvValue', () => {
+	afterEach(() => {
+		process.exitCode = undefined;
+	});
+
+	it.each([
+		['plain', 'abc-123_/:.@=', 'abc-123_/:.@='],
+		['empty', '', ''],
+		['spaces', ' a b ', "' a b '"],
+		['#', 'a#b', "'a#b'"],
+		['double quotes', 'say "hi"', `'say "hi"'`],
+		['backticks', 'a`b', "'a`b'"],
+		['single quotes', "it's", "`it's`"],
+		['single quotes and backticks', "it's `x`", '"it\'s `x`"'],
+		['newlines', 'line1\nline2', "'line1\nline2'"],
+		['backslashes', 'a\\nb\\', 'a\\nb\\'],
+		['a backslash and a space', 'a\\n b', "'a\\n b'"],
+	])('round-trips a value with %s', (_, value, expected) => {
+		const serialized = serializeDotEnvValue('NAME', value);
+
+		if (expected !== undefined) expect(serialized).toBe(expected);
+		expect(parseDotEnv(`NAME=${serialized}`).vars.NAME).toBe(value);
+	});
+
+	it('fails for a value with single quotes, backticks, and \\n, which double quotes would change', () => {
+		expect(() => serializeDotEnvValue('NAME', "it's `a\\nb`")).toThrow(
+			"The value of NAME can't be written to .env: it can't be quoted so that it reads back the same.",
+		);
+	});
+
+	it.each([
+		[
+			'a carriage return',
+			'line1\r\nline2',
+			"it has a carriage return, as in Windows line endings, which .env can't hold",
+		],
+		['a NUL character', 's3cr3t\0tail', "it has a NUL character, which .env can't hold"],
+	])('fails for a value with %s and gives the reason', (_, value, reason) => {
+		expect(() => serializeDotEnvValue('NAME', value)).toThrow(`The value of NAME can't be written to .env: ${reason}.`);
+		expect(describeUnwritableDotEnvValue(value)).toBe(reason);
+	});
+
+	it('describes no reason for a value that .env can hold', () => {
+		expect(describeUnwritableDotEnvValue("it's\nmulti-line")).toBeUndefined();
+	});
+
+	it('fails for a value that contains every quote character, without printing it', () => {
+		expect(() => serializeDotEnvValue('NAME', `'"\`s3cr3t`)).toThrow(
+			"The value of NAME can't be written to .env: it contains every quote character.",
+		);
+		expect(process.exitCode).toBe(5);
+
+		try {
+			serializeDotEnvValue('NAME', `'"\`s3cr3t`);
+		} catch (err) {
+			expect((err as Error).message).not.toContain('s3cr3t');
+		}
+	});
+});
+
+describe('updateDotEnvContent', () => {
+	afterEach(() => {
+		process.exitCode = undefined;
+	});
+
+	it('appends keys to empty content in the given order', () => {
+		expect(updateDotEnvContent('', { B: '2', A: 'a b' })).toBe("B=2\nA='a b'\n");
+	});
+
+	it('replaces a value in place and keeps comments, blank lines, and other keys', () => {
+		const content = '# comment\nA=1\n\nexport B=old # note\nC=3\n';
+
+		expect(updateDotEnvContent(content, { B: 'new' })).toBe('# comment\nA=1\n\nexport B=new\nC=3\n');
+	});
+
+	it('replaces the last assignment of a duplicate key only', () => {
+		expect(updateDotEnvContent('A=1\nB=2\nA=3\n', { A: 'x' })).toBe('A=1\nB=2\nA=x\n');
+	});
+
+	it('replaces a multi-line quoted value', () => {
+		const content = "A='line1\nB=not-a-key\nline3'\nC=3\n";
+
+		expect(updateDotEnvContent(content, { A: 'one' })).toBe('A=one\nC=3\n');
+		expect(updateDotEnvContent(content, { B: 'b' })).toBe(`${content}B=b\n`);
+	});
+
+	it('writes a multi-line value that reads back the same', () => {
+		const result = updateDotEnvContent('A=1\n', { A: 'x\ny', B: 'z' });
+
+		expect(result).toBe("A='x\ny'\nB=z\n");
+		expect(parseDotEnv(result).vars).toEqual({ A: 'x\ny', B: 'z' });
+	});
+
+	it('finds the ends of thousands of multi-line values in linear time', () => {
+		const lines = Array.from({ length: 100_000 }, (_, i) => `KEY_${i}='first\nsecond'\n`);
+		const start = performance.now();
+
+		const result = updateDotEnvContent(lines.join(''), { KEY_99999: 'x', NEW: 'y' });
+
+		expect(performance.now() - start).toBeLessThan(2000);
+		expect(result).toBe(`${lines.slice(0, -1).join('')}KEY_99999=x\nNEW=y\n`);
+	});
+
+	it('adds a missing final newline before appending', () => {
+		expect(updateDotEnvContent('A=1', { B: '2' })).toBe('A=1\nB=2\n');
+	});
+
+	it('keeps CRLF line endings', () => {
+		expect(updateDotEnvContent('# c\r\nA=1\r\nB=2\r\n', { A: 'x', C: '3' })).toBe('# c\r\nA=x\r\nB=2\r\nC=3\r\n');
+	});
+
+	it('fails when the result would not read back as expected', () => {
+		// A name that starts with # makes the written line a comment.
+		expect(() => updateDotEnvContent('A=1\n', { '#A': '1' })).toThrow(
+			"Couldn't update .env without changing other lines. Edit it by hand.",
+		);
+		expect(process.exitCode).toBe(5);
+	});
+});
+
+describe('writeDotEnv', () => {
+	let actorDir: string;
+
+	beforeEach(() => {
+		actorDir = mkdtempSync(join(tmpdir(), 'dotenv-write-test-'));
+	});
+
+	afterEach(() => {
+		rmSync(actorDir, { recursive: true, force: true });
+		process.exitCode = undefined;
+	});
+
+	it.skipIf(process.platform === 'win32')(
+		'creates .env readable only by its owner and keeps the mode of an existing one',
+		() => {
+			writeDotEnv(actorDir, 'A=1\n');
+
+			expect(readFileSync(join(actorDir, '.env'), 'utf8')).toBe('A=1\n');
+			expect(statSync(join(actorDir, '.env')).mode & 0o777).toBe(0o600);
+
+			chmodSync(join(actorDir, '.env'), 0o640);
+			writeDotEnv(actorDir, 'A=2\n');
+
+			expect(readFileSync(join(actorDir, '.env'), 'utf8')).toBe('A=2\n');
+			expect(statSync(join(actorDir, '.env')).mode & 0o777).toBe(0o640);
+		},
+	);
+
+	it('fails when .env is a directory', () => {
+		mkdirSync(join(actorDir, '.env'));
+
+		expect(() => writeDotEnv(actorDir, 'A=1\n')).toThrow(
+			`${join(actorDir, '.env')} is a directory, for example a Python virtual environment. Rename it, for example to .venv, to use a .env file.`,
+		);
+		expect(process.exitCode).toBe(5);
+	});
+});
+
+describe('ensureDotEnvGitignored', () => {
+	let actorDir: string;
+
+	const git = (...args: string[]) =>
+		execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', ...args], {
+			cwd: actorDir,
+			stdio: 'ignore',
+		});
+	const gitignore = () => readFileSync(join(actorDir, '.gitignore'), 'utf8');
+
+	beforeEach(() => {
+		actorDir = mkdtempSync(join(tmpdir(), 'dotenv-gitignore-test-'));
+		git('init', '--quiet');
+	});
+
+	afterEach(() => {
+		rmSync(actorDir, { recursive: true, force: true });
+	});
+
+	it('adds .env to .gitignore when .env does not exist yet', async () => {
+		writeFileSync(join(actorDir, '.gitignore'), 'node_modules\n');
+
+		expect(await ensureDotEnvGitignored(actorDir)).toEqual({ added: true, tracked: false });
+		expect(gitignore()).toBe('node_modules\n\n# Added by Apify CLI\n.env\n');
+	});
+
+	it('creates .gitignore when it is missing', async () => {
+		expect(await ensureDotEnvGitignored(actorDir)).toEqual({ added: true, tracked: false });
+		expect(gitignore()).toBe('.env\n');
+	});
+
+	it('adds nothing when a pattern already ignores .env', async () => {
+		writeFileSync(join(actorDir, '.gitignore'), '.env*\n');
+		writeFileSync(join(actorDir, '.env'), 'A=1\n');
+
+		expect(await ensureDotEnvGitignored(actorDir)).toEqual({ added: false, tracked: false });
+		expect(gitignore()).toBe('.env*\n');
+	});
+
+	it('adds nothing when a .gitignore above the Actor directory ignores .env', async () => {
+		writeFileSync(join(actorDir, '.gitignore'), '.env\n');
+		mkdirSync(join(actorDir, 'actors', 'scraper'), { recursive: true });
+
+		expect(await ensureDotEnvGitignored(join(actorDir, 'actors', 'scraper'))).toEqual({ added: false, tracked: false });
+	});
+
+	it('reports a committed .env as tracked', async () => {
+		writeFileSync(join(actorDir, '.env'), 'A=1\n');
+		git('add', '.env');
+		git('commit', '--quiet', '-m', 'init');
+
+		expect(await ensureDotEnvGitignored(actorDir)).toEqual({ added: true, tracked: true });
+	});
 });
 
 describe('describeMalformedLines', () => {

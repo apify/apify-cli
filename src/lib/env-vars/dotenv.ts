@@ -1,7 +1,8 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { DOTENV_FILE_NAME } from '../consts.js';
+import { ensureGitignoreEntries, getGitignoreMatcher, isTrackedByGit } from '../utils.js';
 import { envFail } from './errors.js';
 
 export interface DotEnvFile {
@@ -144,4 +145,134 @@ export function readDotEnv(actorDir: string): DotEnvFile {
 	content = content.replace(/^\uFEFF/, '');
 
 	return { path, exists: true, content, ...parseDotEnv(content) };
+}
+
+const dotEnvValueCandidates = (value: string) => [
+	...(/^[^\s#'"`]*$/.test(value) ? [value] : []),
+	...(value.includes("'") ? [] : [`'${value}'`]),
+	...(value.includes('`') ? [] : [`\`${value}\``]),
+	...(value.includes('"') ? [] : [`"${value}"`]),
+];
+
+const findDotEnvValue = (value: string) =>
+	dotEnvValueCandidates(value).find((candidate) => parseDotEnv(`K=${candidate}`).vars.K === value);
+
+/** Why .env can't hold the value so that it reads back the same, or undefined when it can. It never quotes the value. */
+export function describeUnwritableDotEnvValue(value: string): string | undefined {
+	if (findDotEnvValue(value) !== undefined) return undefined;
+
+	if (value.includes('\r')) return "it has a carriage return, as in Windows line endings, which .env can't hold";
+	if (value.includes('\0')) return "it has a NUL character, which .env can't hold";
+	if (!dotEnvValueCandidates(value).length) return 'it contains every quote character';
+	return "it can't be quoted so that it reads back the same";
+}
+
+/**
+ * The value as it goes after `NAME=` in .env, so that parsing it gives the value back. Values that need it are quoted
+ * with ' or `, which keep the value literal. Double quotes, which turn \n into a new line, are the last resort for a
+ * value that contains both, and only when the value reads back the same. `name` only names the variable in the error.
+ */
+export function serializeDotEnvValue(name: string, value: string): string {
+	const serialized = findDotEnvValue(value);
+	if (serialized === undefined) {
+		envFail(`The value of ${name} can't be written to .env: ${describeUnwritableDotEnvValue(value)}.`);
+	}
+
+	return serialized;
+}
+
+const ASSIGNMENT = /^(\s*(?:export\s+)?)([^\s=#]+)\s*=/;
+
+/**
+ * Sets `updates` in the content of a .env file. The last assignment of a key is replaced in place, and keys without one
+ * are appended in the given order. Comments, blank lines, and the other lines stay as they are.
+ */
+export function updateDotEnvContent(content: string, updates: Record<string, string>): string {
+	const eol = content.includes('\r\n') ? '\r\n' : '\n';
+	// Each line keeps its line ending.
+	const lines = content.match(/[^\n]*\n|[^\n]+$/g) ?? [];
+
+	// The lines of the last assignment of each key: a quoted value without its closing quote spans to the line with it.
+	const assignments = new Map<string, { start: number; end: number; prefix: string }>();
+	for (let i = 0; i < lines.length; i++) {
+		const match = lines[i].match(ASSIGNMENT);
+		if (!match) continue;
+
+		const start = i;
+		const quote = lines[i].slice(match[0].length).trimStart()[0];
+		if (QUOTES.includes(quote) && !lines[i].slice(lines[i].indexOf(quote, match[0].length) + 1).includes(quote)) {
+			// Searches from the next line on: a search from line 0 for every such value would be quadratic.
+			let end = i + 1;
+			while (end < lines.length && !lines[end].includes(quote)) end++;
+			if (end < lines.length) i = end;
+		}
+
+		assignments.set(match[2], { start, end: i, prefix: match[1] });
+	}
+
+	const replaced = new Map<number, string>();
+	const appended: string[] = [];
+	for (const [name, value] of Object.entries(updates)) {
+		const line = `${name}=${serializeDotEnvValue(name, value)}`;
+		const assignment = assignments.get(name);
+		if (!assignment) {
+			appended.push(`${line}${eol}`);
+			continue;
+		}
+
+		const lineEnding = lines[assignment.end].match(/\r?\n$/)?.[0] ?? '';
+		replaced.set(assignment.start, `${assignment.prefix}${line}${lineEnding}`);
+		for (let j = assignment.start + 1; j <= assignment.end; j++) replaced.set(j, '');
+	}
+
+	let result = lines.map((line, i) => replaced.get(i) ?? line).join('');
+	if (appended.length) {
+		if (result && !result.endsWith('\n')) result += eol;
+		result += appended.join('');
+	}
+
+	const expected = { ...parseDotEnv(content).vars, ...updates };
+	const actual = parseDotEnv(result).vars;
+	const same =
+		Object.keys(actual).length === Object.keys(expected).length &&
+		Object.entries(expected).every(([name, value]) => Object.hasOwn(actual, name) && actual[name] === value);
+	if (!same) {
+		envFail("Couldn't update .env without changing other lines. Edit it by hand.");
+	}
+
+	return result;
+}
+
+/** Fails when `.env` in the Actor directory is a directory, such as a Python virtual environment. */
+export function checkDotEnvWritable(actorDir: string): void {
+	const path = getDotEnvPath(actorDir);
+	if (statSync(path, { throwIfNoEntry: false })?.isDirectory()) {
+		envFail(
+			`${path} is a directory, for example a Python virtual environment. Rename it, for example to .venv, to use a .env file.`,
+		);
+	}
+}
+
+/** Writes .env in the Actor directory. A new file is readable only by its owner; an existing one keeps its mode. */
+export function writeDotEnv(actorDir: string, content: string): void {
+	checkDotEnvWritable(actorDir);
+
+	const path = getDotEnvPath(actorDir);
+	try {
+		writeFileSync(path, content, { mode: 0o600 });
+	} catch (err) {
+		envFail(`Couldn't write ${path}: ${(err as Error).message}`);
+	}
+}
+
+/**
+ * Adds `.env` to the Actor directory's .gitignore unless ignore rules already cover it. Call it before writing .env, so
+ * the written file is never left unignored. `tracked` says whether Git already tracks .env, which .gitignore doesn't
+ * change.
+ */
+export async function ensureDotEnvGitignored(actorDir: string): Promise<{ added: boolean; tracked: boolean }> {
+	// Naming .env makes the matcher ask git about it by name, so the answer holds for a .env that doesn't exist yet.
+	const isIgnored = await getGitignoreMatcher(actorDir, [DOTENV_FILE_NAME]);
+	const added = isIgnored(DOTENV_FILE_NAME) ? false : ensureGitignoreEntries(actorDir, [DOTENV_FILE_NAME]).length > 0;
+	return { added, tracked: isTrackedByGit(actorDir, DOTENV_FILE_NAME) };
 }

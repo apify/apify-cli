@@ -1267,6 +1267,10 @@ SUBCOMMANDS
             before it makes them. Adds and updates variables; --prune also deletes
             the ones that aren't in .env. New variables are secrets unless --plain
             is passed. Keys with an empty value are skipped.
+  env pull  Writes the env vars of an Actor version into .env. Secret
+            values can't be read back, so their keys are written empty. In an
+            existing .env, it updates plain variables and keeps the local value of
+            secrets and of keys that exist only locally.
 ```
 
 ##### `apify env ls`
@@ -1378,6 +1382,33 @@ FLAGS
                          command, by name or user ID. See "apify auth list".
       --prune            Also delete variables on the platform
                          that aren't in .env.
+  -v, --version=<value>  Actor version. Defaults to "version"
+                         in '.actor/actor.json', then to 0.0.
+  -y, --yes              Answer "yes" to all prompts.
+```
+
+##### `apify env pull`
+
+```sh
+DESCRIPTION
+  Writes the env vars of an Actor version into .env. Secret values can't be read
+   back, so their keys are written empty. In an existing .env, it updates plain 
+  variables and keeps the local value of secrets and of keys that exist only 
+  locally.
+
+USAGE
+  $ apify env pull [--actor <value>] [--dir <value>] [--json]
+                   [--profile <value>] [-v <value>] [-y]
+
+FLAGS
+      --actor=<value>    ID or "username/name" of the Actor. Use
+                         it to target an Actor without a local project.
+      --dir=<value>      Directory of the Actor and its .env
+                         file. Use it to pick an Actor folder in a monorepo.
+                         Defaults to the current directory.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
   -v, --version=<value>  Actor version. Defaults to "version"
                          in '.actor/actor.json', then to 0.0.
   -y, --yes              Answer "yes" to all prompts.

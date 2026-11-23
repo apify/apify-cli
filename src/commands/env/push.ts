@@ -101,7 +101,9 @@ export class EnvPushCommand extends ApifyCommand<typeof EnvPushCommand> {
 		const dotEnv = readDotEnv(target.actorDir);
 
 		if (!dotEnv.exists) {
-			envFail(`No .env file in ${target.actorDir}. Create one with a NAME=value line per variable.`);
+			envFail(
+				`No .env file in ${target.actorDir}. Create one with a NAME=value line per variable, or run apify env pull to start from the platform values.`,
+			);
 		}
 
 		failOnMalformedLines(dotEnv, 'push');
