@@ -25,7 +25,7 @@ MYSQL_PASSWORD='p4ss word'
 - Values are literal. `@name` isn't a secret reference, and `$OTHER` isn't expanded. Lines that start with `#` are comments, and an `export ` prefix is allowed.
 - Quote a value that contains spaces or `#`. Single quotes and backticks keep the value as written and can span lines. Double quotes turn `\n` into a new line.
 - When a key appears twice, the last line wins.
-- A name can only have letters, digits, and underscores, and can't start with a digit. A line that isn't empty, a comment, or a `NAME=value` assignment with such a name is malformed. `apify run`, `apify env push`, `apify env pull`, and `apify env migrate` skip malformed lines and warn with their line numbers, never their content. `apify env diff` stops with an error instead. Quote a value that spans several lines, or its other lines are malformed.
+- A name can only have letters, digits, and underscores, and can't start with a digit. A line that isn't empty, a comment, or a `NAME=value` assignment with such a name is malformed. `apify run`, `apify env pull`, and `apify env migrate` skip malformed lines and warn with their line numbers, never their content. `apify env push` and `apify env diff` stop with an error instead. Quote a value that spans several lines, or its other lines are malformed.
 
 ### Precedence in `apify run`
 
@@ -118,9 +118,12 @@ Only on the platform, kept: OLD_VAR. Pass --prune to delete.
 - It adds new variables and updates changed ones. Pass `--prune` to also delete the variables that aren't in `.env`.
 - New variables are secrets. Pass `--plain` to create them as plain variables. Existing variables keep their type.
 - Keys with an empty value are skipped.
+- It skips the variables whose name can't be in `.env`, such as `MY-VAR`, and names them in a warning. `--prune` doesn't delete them.
 - Pass `--yes` to skip the prompt, for example in CI.
 
 When one variable fails, the command still applies the others, reports each result, and exits with 1.
+
+When `.env` has malformed lines, the command changes nothing and exits with 5. The error names the malformed lines by number only.
 
 ### Download into `.env`
 
@@ -153,6 +156,8 @@ The command lists the keys that exist only in `.env`, the keys that exist only o
 ```
 
 It exits with 0 when `.env` and the Actor version are in sync and with 1 on any difference. With `--json`, it prints `inSync`, `onlyInDotEnv`, `onlyOnPlatform`, and `valuesDiffer`. The output never contains values.
+
+It skips the variables whose name can't be in `.env`, such as `MY-VAR`, and names them in a warning.
 
 When `.env` has malformed lines, the command compares nothing and exits with 5. The lines of an unquoted value that spans several lines can look like `NAME=value`, so their text would show up as names. The error names the malformed lines by number only.
 
