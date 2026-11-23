@@ -148,6 +148,22 @@ describe('apify env migrate', () => {
 		expectNoValues();
 	});
 
+	it("stops on names that .env can't hold and changes nothing", async () => {
+		const actorJson = actorJsonWith({ 'BAD-NAME': 'x', '1ABC': 'y', PLAIN: 'p' });
+		writeActorJson(actorJson);
+
+		await testRunCommand(EnvMigrateCommand, { flags_dir: actorDir, flags_yes: true });
+
+		expect(process.exitCode).toBe(5);
+		expect(stderr()).toContain(
+			"These names in .actor/actor.json can't be in .env: 1ABC, BAD-NAME. A name in .env can only have letters, digits, and underscores, and can't start with a digit. Rename them, then run the command again.",
+		);
+		expect(yesNoConfirm).not.toHaveBeenCalled();
+		expect(existsSync(dotEnvPath())).toBe(false);
+		expect(existsSync(join(actorDir, '.gitignore'))).toBe(false);
+		expect(readActorJson()).toBe(actorJson);
+	});
+
 	it('writes the keys of missing secrets empty with --allow-missing-secrets', async () => {
 		writeActorJson(actorJsonWith({ TOKEN: '@token', PLAIN: 'p' }));
 
