@@ -110,6 +110,35 @@ describe('apify env ls', () => {
 		expectNoSecretValue(instance);
 	});
 
+	describe('with control characters in a name and a value', () => {
+		const value = 'a\u001b[2Jb\u009bc\td\ne';
+
+		beforeEach(() => {
+			envPlatform.state.actors[0].versions[0].envVars.push({ name: 'BELL\u0007', value });
+		});
+
+		it('escapes them in the table', async () => {
+			await testRunCommand(EnvLsCommand, { flags_dir: actorDir });
+
+			const table = logMessages.log.join('\n');
+			expect(table).toContain('a\\x1b[2Jb\\x9bc\\x09d');
+			expect(table).toContain('BELL\\x07');
+			for (const raw of ['\u001b[2J', '\u009b', '\t', '\u0007']) {
+				expect(table).not.toContain(raw);
+			}
+		});
+
+		it('keeps them in --json', async () => {
+			await testRunCommand(EnvLsCommand, { flags_dir: actorDir, flags_json: true });
+
+			expect(JSON.parse(logMessages.log.join('\n')).envVars).toContainEqual({
+				name: 'BELL\u0007',
+				isSecret: false,
+				value,
+			});
+		});
+	});
+
 	it('says when the version has no env vars', async () => {
 		await testRunCommand(EnvLsCommand, { flags_actor: 'tester/my-actor', flags_version: '1.0' });
 

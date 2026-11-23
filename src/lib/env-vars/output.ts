@@ -14,6 +14,10 @@ export function targetJson(target: EnvTarget): { actor: { id: string; name: stri
 	return { actor: { id: target.actor.id, name: target.actorLabel }, version: target.versionNumber };
 }
 
+/** Shows control characters other than a newline as `\xNN`, so a name or value can't send escape sequences to the terminal. */
+const escapeControlChars = (text: string) =>
+	text.replace(/\p{Cc}/gu, (char) => (char === '\n' ? char : `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`));
+
 /** A table of names, types, and plain values. A secret's value is never shown. */
 export function renderEnvVarTable(envVars: PlatformEnvVar[]): string {
 	const table = new ResponsiveTable({
@@ -23,9 +27,9 @@ export function renderEnvVarTable(envVars: PlatformEnvVar[]): string {
 
 	for (const envVar of envVars) {
 		table.pushRow({
-			Name: chalk.cyan(envVar.name),
+			Name: chalk.cyan(escapeControlChars(envVar.name)),
 			Type: envVar.isSecret ? 'secret' : 'plain',
-			Value: envVar.isSecret ? chalk.gray('hidden') : (envVar.value ?? ''),
+			Value: envVar.isSecret ? chalk.gray('hidden') : escapeControlChars(envVar.value ?? ''),
 		});
 	}
 
