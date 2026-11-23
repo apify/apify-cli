@@ -48,6 +48,25 @@ describe('readDotEnv', () => {
 		expect(read('# a comment\n\nA=one\n  # indented comment\nB=two\n').vars).toEqual({ A: 'one', B: 'two' });
 	});
 
+	it('reads lines without "=", indented comments, and "=" in a last-line value like Node.js 22.16 and later', () => {
+		// Node.js 22.1-22.15 and 23 util.parseEnv gives { A, 'JUNK\nB', '# indented comment\nC', D, a: 'b' }.
+		expect(read('A=one\nJUNK\nB=two\n  # indented comment\nC=three\nD=a=b').vars).toEqual({
+			A: 'one',
+			B: 'two',
+			C: 'three',
+			D: 'a=b',
+		});
+	});
+
+	it('reads lines that util.parseEnv gets wrong also on Node.js 22.16 and later', () => {
+		// Node.js 22.16+ util.parseEnv gives { '': '', '# indented': 'comment', SPACES: 'NEXT=next', 'export EMPTY': '' }.
+		expect(read('# comment\n  # indented=comment\nSPACES=  \nNEXT=next\nexport EMPTY=\n=\n').vars).toEqual({
+			SPACES: '',
+			NEXT: 'next',
+			EMPTY: '',
+		});
+	});
+
 	it('accepts the export prefix', () => {
 		expect(read('export A=one\n').vars).toEqual({ A: 'one' });
 	});
