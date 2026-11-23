@@ -56,6 +56,16 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 			);
 		}
 
+		// The lines of an unquoted multi-line value can read as NAME=value, so with malformed lines nothing is compared.
+		const { malformedLines } = dotEnv;
+		if (malformedLines.length) {
+			const lines =
+				malformedLines.length === 1 ? `line ${malformedLines[0]} is` : `lines ${malformedLines.join(', ')} are`;
+			envFail(
+				`Can't compare ${dotEnv.path}: ${lines} malformed. Quote values that span several lines, and fix or remove the other lines.`,
+			);
+		}
+
 		const comparison = compareEnvVars(dotEnv.vars, await listPlatformEnvVars(target));
 		const namesWith = (status: EnvVarComparisonStatus) =>
 			comparison.filter((entry) => entry.status === status).map(({ name }) => name);

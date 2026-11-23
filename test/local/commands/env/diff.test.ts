@@ -184,6 +184,46 @@ describe('apify env diff', () => {
 		});
 	});
 
+	// Secret material from unquoted multi-line values and a stray line: the parts before '=' must never be printed.
+	const PEM_TAIL = 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7secretmaterialQ';
+	const MALFORMED_DOTENVS = {
+		'an unquoted PEM key': {
+			content: `PLAIN=${PLAIN_VALUE}\nKEY=-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgk+qhkiG9w0BAQEFAA/SCBKcwggSjAgEA\n${PEM_TAIL}==\n-----END PRIVATE KEY-----\n`,
+			lines: 'lines 3, 5 are',
+			material: [PEM_TAIL, 'MIIEvQIBADANBgk'],
+		},
+		'an unquoted service account JSON': {
+			content: `PLAIN=${PLAIN_VALUE}\nGOOGLE_CREDENTIALS={\n  "type": "service_account",\n  "private_key": "-----BEGIN PRIVATE KEY-----\\nsa-key-material==\\n-----END PRIVATE KEY-----\\n",\n}\n`,
+			lines: 'lines 3, 4, 5 are',
+			material: ['sa-key-material', 'private_key'],
+		},
+		'a stray connection string': {
+			content: `PLAIN=${PLAIN_VALUE}\npostgres://admin:hunter2@db/app?sslmode=require\n`,
+			lines: 'line 2 is',
+			material: ['hunter2', 'postgres'],
+		},
+	};
+
+	it.each(
+		Object.entries(MALFORMED_DOTENVS).flatMap(([name, dotEnv]) => [
+			{ name, json: false, ...dotEnv },
+			{ name, json: true, ...dotEnv },
+		]),
+	)('fails without printing any part of $name (--json: $json)', async ({ content, lines, material, json }) => {
+		writeDotEnv(content);
+
+		const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir, flags_json: json });
+
+		expect(process.exitCode).toBe(5);
+		expect(stdout()).toBe('');
+		expect(stderr()).toContain(`Can't compare ${join(actorDir, '.env')}: ${lines} malformed.`);
+		for (const text of material) {
+			expect(stderr()).not.toContain(text);
+			expect(JSON.stringify((instance as unknown as Record<string, unknown>).telemetryData)).not.toContain(text);
+		}
+		expectNoValues(instance);
+	});
+
 	it('fails with exit code 5 when there is no .env file', async () => {
 		await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
 
