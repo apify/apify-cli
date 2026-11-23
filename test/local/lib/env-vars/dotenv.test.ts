@@ -101,6 +101,10 @@ describe('readDotEnv', () => {
 		});
 	});
 
+	it('reads empty values and values with "="', () => {
+		expect(read('EMPTY=\nWITH_EQUALS=a=b\nLAST=last\n').vars).toEqual({ EMPTY: '', WITH_EQUALS: 'a=b', LAST: 'last' });
+	});
+
 	it('accepts the export prefix', () => {
 		expect(read('export A=one\n').vars).toEqual({ A: 'one' });
 	});

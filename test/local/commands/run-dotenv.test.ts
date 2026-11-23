@@ -32,6 +32,7 @@ const RECORDED_VARS = [
 	'FROM_ACTOR_JSON',
 	'FROM_DOTENV',
 	'SECRET_REF',
+	'EMPTY',
 	'BAD-NAME',
 ];
 
@@ -128,10 +129,13 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 		expect((await runAndReadEnv()).CRAWLEE_PURGE_ON_START).toBe('dotenv');
 	});
 
-	it('passes @secret references in .env literally', async () => {
-		writeFileSync(joinPath('.env'), 'SECRET_REF=@foo\n');
+	it('passes @secret references and empty values in .env literally', async () => {
+		writeFileSync(joinPath('.env'), 'SECRET_REF=@foo\nEMPTY=\n');
 
-		expect((await runAndReadEnv()).SECRET_REF).toBe('@foo');
+		const env = await runAndReadEnv();
+
+		expect(env.SECRET_REF).toBe('@foo');
+		expect(env.EMPTY).toBe('');
 	});
 
 	it('skips malformed .env lines and names them only by number', async () => {
