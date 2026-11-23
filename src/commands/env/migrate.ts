@@ -8,8 +8,10 @@ import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import {
 	checkDotEnvWritable,
+	describeMalformedLines,
 	ensureDotEnvGitignored,
 	isDotEnvGitignored,
+	isValidDotEnvName,
 	readDotEnv,
 	updateDotEnvContent,
 	writeDotEnv,
@@ -84,6 +86,16 @@ export class EnvMigrateCommand extends ApifyCommand<typeof EnvMigrateCommand> {
 		}
 
 		const env = environmentVariables as Record<string, unknown>;
+
+		const invalidNames = Object.keys(env)
+			.filter((name) => !isValidDotEnvName(name))
+			.sort(byName);
+		if (invalidNames.length) {
+			envFail(
+				`These names in .actor/actor.json can't be in .env: ${invalidNames.join(', ')}. A name in .env can only have letters, digits, and underscores, and can't start with a digit. Rename them, then run the command again.`,
+			);
+		}
+
 		// Only read the secrets store when something refers to it, so a broken store doesn't stop a project without references.
 		const secrets = countLegacyEnvVars(env).secretRefsCount > 0 ? readLegacySecrets() : {};
 		const { values, missingSecrets } = resolveLegacyEnvVars(env, secrets);
@@ -96,6 +108,9 @@ export class EnvMigrateCommand extends ApifyCommand<typeof EnvMigrateCommand> {
 		}
 
 		const dotEnv = readDotEnv(actorDir);
+		const malformedLinesWarning = describeMalformedLines(dotEnv);
+		if (malformedLinesWarning) warning({ message: `${malformedLinesWarning} They stay in .env unchanged.` });
+
 		// actor.json order, so new keys land in .env in the order the project had them.
 		const newKeys = Object.keys(values).filter((name) => !Object.hasOwn(dotEnv.vars, name));
 		const names = Object.keys(values).sort(byName);

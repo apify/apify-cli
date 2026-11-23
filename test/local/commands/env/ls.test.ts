@@ -71,9 +71,15 @@ describe('apify env ls', () => {
 		expect(output).toMatch(/LOG_LEVEL.*plain.*debug/);
 		expect(output).toMatch(/API_KEY.*secret.*hidden/);
 		expect(output.indexOf('LOG_LEVEL')).toBeLessThan(output.indexOf('API_KEY'));
-		expect(logMessages.error).toEqual([]);
 		expect(process.exitCode).toBeUndefined();
 		expectNoSecretValue(instance);
+	});
+
+	it('names the Actor and version on stderr, so stdout holds only the table', async () => {
+		await testRunCommand(EnvLsCommand, { flags_dir: actorDir });
+
+		expect(logMessages.error.join('\n')).toContain('Env vars on tester/my-actor version 0.0:');
+		expect(logMessages.log.join('\n')).not.toContain('Env vars on');
 	});
 
 	it('prints JSON with --json', async () => {
@@ -92,10 +98,51 @@ describe('apify env ls', () => {
 		expectNoSecretValue(instance);
 	});
 
+	it.each([
+		['the table', {}],
+		['--json', { flags_json: true }],
+	])('keeps a secret value the API returns out of %s', async (_, flags) => {
+		envPlatform.state.leakSecretValues = true;
+
+		const instance = await testRunCommand(EnvLsCommand, { flags_dir: actorDir, ...flags });
+
+		expect(logMessages.log.join('\n')).toContain('API_KEY');
+		expectNoSecretValue(instance);
+	});
+
+	describe('with control characters in a name and a value', () => {
+		const value = 'a\u001b[2Jb\u009bc\td\ne';
+
+		beforeEach(() => {
+			envPlatform.state.actors[0].versions[0].envVars.push({ name: 'BELL\u0007', value });
+		});
+
+		it('escapes them in the table', async () => {
+			await testRunCommand(EnvLsCommand, { flags_dir: actorDir });
+
+			const table = logMessages.log.join('\n');
+			expect(table).toContain('a\\x1b[2Jb\\x9bc\\x09d');
+			expect(table).toContain('BELL\\x07');
+			for (const raw of ['\u001b[2J', '\u009b', '\t', '\u0007']) {
+				expect(table).not.toContain(raw);
+			}
+		});
+
+		it('keeps them in --json', async () => {
+			await testRunCommand(EnvLsCommand, { flags_dir: actorDir, flags_json: true });
+
+			expect(JSON.parse(logMessages.log.join('\n')).envVars).toContainEqual({
+				name: 'BELL\u0007',
+				isSecret: false,
+				value,
+			});
+		});
+	});
+
 	it('says when the version has no env vars', async () => {
 		await testRunCommand(EnvLsCommand, { flags_actor: 'tester/my-actor', flags_version: '1.0' });
 
-		expect(logMessages.log.join('\n')).toContain('No env vars on tester/my-actor version 1.0.');
+		expect(logMessages.log).toEqual(['No env vars on tester/my-actor version 1.0.']);
 	});
 
 	it('prints an empty list with --json', async () => {

@@ -54,10 +54,11 @@ export class EnvLsCommand extends ApifyCommand<typeof EnvLsCommand> {
 		}
 
 		if (!envVars.length) {
-			info({ message: `No env vars on ${describeTarget(target)}.`, stdout: true });
+			simpleLog({ message: `No env vars on ${describeTarget(target)}.`, stdout: true });
 			return;
 		}
 
+		info({ message: `Env vars on ${describeTarget(target)}:` });
 		simpleLog({ message: renderEnvVarTable(envVars), stdout: true });
 	}
 }

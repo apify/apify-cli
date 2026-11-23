@@ -184,10 +184,10 @@ describe('Utils - .actorignore negation overrides gitignore', () => {
 		writeFileSync(joinPath('src/index.js'), 'content', { flag: 'w' });
 		writeFileSync(joinPath('dist/bundle.js'), 'content', { flag: 'w' });
 		writeFileSync(joinPath('dist/styles.css'), 'content', { flag: 'w' });
-		writeFileSync(joinPath('.env'), 'SECRET=123', { flag: 'w' });
+		writeFileSync(joinPath('secret.txt'), 'SECRET=123', { flag: 'w' });
 
-		// git ignores dist/ and .env
-		writeFileSync(joinPath('.gitignore'), 'dist/\n.env\n', { flag: 'w' });
+		// git ignores dist/ and secret.txt
+		writeFileSync(joinPath('.gitignore'), 'dist/\nsecret.txt\n', { flag: 'w' });
 		// .actorignore force-includes dist/ (overrides gitignore)
 		writeFileSync(joinPath('.actorignore'), '!dist/\n', { flag: 'w' });
 	});
@@ -204,8 +204,8 @@ describe('Utils - .actorignore negation overrides gitignore', () => {
 		// dist/ is git-ignored but force-included by .actorignore
 		expect(paths).toContain('dist/bundle.js');
 		expect(paths).toContain('dist/styles.css');
-		// .env is git-ignored and NOT force-included
-		expect(paths).not.toContain('.env');
+		// secret.txt is git-ignored and NOT force-included
+		expect(paths).not.toContain('secret.txt');
 	});
 });
 

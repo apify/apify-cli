@@ -464,7 +464,7 @@ FLAGS
 DESCRIPTION
   Executes Actor locally with simulated Apify environment variables.
   Stores data in local 'storage' directory.
-  Loads variables from a .env file in the Actor directory; they override the 
+  Loads variables from a '.env' file in the Actor directory; they override the 
   other sources.
 
   NOTE: For Node.js Actors, customize behavior by modifying the 'start' script 
@@ -1281,6 +1281,7 @@ SUBCOMMANDS
   env diff     Compares .env with the env vars of an Actor version.
                Exits with 0 when they're in sync and with 1 on any difference, so
                it fits pre-commit hooks and CI. Secrets are compared by name only.
+               Values are never printed.
   env migrate  Moves "environmentVariables" from .actor/actor.json
                into .env, resolving "@secret" references from the local secrets
                store. Keys already in .env keep their value. Then removes the
@@ -1434,7 +1435,7 @@ FLAGS
 DESCRIPTION
   Compares .env with the env vars of an Actor version. Exits with 0 when they're
    in sync and with 1 on any difference, so it fits pre-commit hooks and CI. 
-  Secrets are compared by name only.
+  Secrets are compared by name only. Values are never printed.
 
 USAGE
   $ apify env diff [--actor <value>] [--dir <value>] [--json]
