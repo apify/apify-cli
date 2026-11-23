@@ -2194,10 +2194,10 @@ ARGUMENTS
 FLAGS
   -d, --body=<value>     The request body. Use "-" to read
                          from stdin.
-      -H, --header=<value>   Additional HTTP header(s). Pass a
+  -H, --header=<value>   Additional HTTP header(s). Pass a
                          single "key:value" string, or a JSON object like '{"X-Foo":
                          "bar", "X-Baz": "qux"}' to send multiple headers.
-      -X, --method=<option>  The HTTP method to use. Defaults to
+  -X, --method=<option>  The HTTP method to use. Defaults to
                          GET.
                          <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>   Query parameters as a JSON object,
