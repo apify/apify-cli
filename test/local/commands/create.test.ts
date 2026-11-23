@@ -97,6 +97,19 @@ describe('apify create', () => {
 		).to.be.eql(expectedInput);
 	});
 
+	it("adds .env once to the template's .gitignore", async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+		});
+
+		toggleCwdBetweenFullAndParentPath();
+
+		const lines = readFileSync(joinPath('.gitignore'), 'utf8').split('\n');
+		expect(lines.filter((line) => line === '.env')).toHaveLength(1);
+	});
+
 	it('ignores --use-case and --language when --template is provided', async () => {
 		// A TypeScript template, deliberately paired with conflicting python/ai filters.
 		const ACT_TEMPLATE = 'getting_started_typescript';

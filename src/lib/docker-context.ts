@@ -5,7 +5,7 @@ import { lstatSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
-import { getActorLocalFilePaths } from './utils.js';
+import { getActorLocalFilePaths, isDotEnvFile } from './utils.js';
 
 export type DockerContextResolution =
 	/** `dockerContextDir` is absent: undefined, null, or an empty string. */
@@ -219,8 +219,8 @@ function gitFileList(root: string, args: string[]): string[] | undefined {
 /**
  * What a Git clone of `root` has, as on disk now, plus untracked files Git does not ignore; `.actorignore` does not
  * apply, as on the platform. Outside Git, what an ordinary push of `root` sends, without dependencies and local run
- * state at any depth. The paths are relative to `root` with forward slashes on every platform, as
- * `getActorLocalFilePaths` returns them.
+ * state at any depth. Never `.env` files (`isDotEnvFile`), tracked or not. The paths are relative to `root` with
+ * forward slashes on every platform, as `getActorLocalFilePaths` returns them.
  */
 export async function getContextFilePaths(root: string): Promise<string[]> {
 	const tracked = gitFileList(root, ['--cached']);
@@ -239,7 +239,9 @@ export async function getContextFilePaths(root: string): Promise<string[]> {
 		}
 	};
 	return [
-		...tracked.filter(isPushable),
-		...untracked.filter((filePath) => isPushable(filePath) && !isDependencyOrRunState(filePath)),
+		...tracked.filter((filePath) => isPushable(filePath) && !isDotEnvFile(filePath)),
+		...untracked.filter(
+			(filePath) => isPushable(filePath) && !isDependencyOrRunState(filePath) && !isDotEnvFile(filePath),
+		),
 	];
 }
