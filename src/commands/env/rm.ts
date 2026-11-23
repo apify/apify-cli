@@ -4,7 +4,7 @@ import { YesFlag } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { envFail } from '../../lib/env-vars/errors.js';
 import { envTargetFlags } from '../../lib/env-vars/flags.js';
-import { describeTarget, escapeControlChars, printRebuildReminder, targetJson } from '../../lib/env-vars/output.js';
+import { describeTarget, escapeName, printRebuildReminder, targetJson } from '../../lib/env-vars/output.js';
 import { deletePlatformEnvVar, getPlatformEnvVar, validateEnvVarName } from '../../lib/env-vars/platform.js';
 import { resolveEnvTarget } from '../../lib/env-vars/target.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
@@ -53,7 +53,7 @@ export class EnvRmCommand extends ApifyCommand<typeof EnvRmCommand> {
 		const { name } = this.args;
 
 		validateEnvVarName(name);
-		const shownName = escapeControlChars(name);
+		const shownName = escapeName(name);
 
 		const target = await resolveEnvTarget(this.flags);
 
