@@ -98,6 +98,18 @@ describe('apify env ls', () => {
 		expectNoSecretValue(instance);
 	});
 
+	it.each([
+		['the table', {}],
+		['--json', { flags_json: true }],
+	])('keeps a secret value the API returns out of %s', async (_, flags) => {
+		envPlatform.state.leakSecretValues = true;
+
+		const instance = await testRunCommand(EnvLsCommand, { flags_dir: actorDir, ...flags });
+
+		expect(logMessages.log.join('\n')).toContain('API_KEY');
+		expectNoSecretValue(instance);
+	});
+
 	it('says when the version has no env vars', async () => {
 		await testRunCommand(EnvLsCommand, { flags_actor: 'tester/my-actor', flags_version: '1.0' });
 
