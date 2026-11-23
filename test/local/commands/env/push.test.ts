@@ -349,6 +349,22 @@ describe('apify env push', () => {
 		expectNoValues(instance);
 	});
 
+	it('skips malformed .env lines and names them only by number', async () => {
+		writeDotEnv(`NEW_VAR=x\nNO_EQUALS_SIGN\nBAD-NAME=${PLAIN_VALUE}\n`);
+
+		const instance = await testRunCommand(EnvPushCommand, {
+			flags_dir: actorDir,
+			flags_yes: true,
+			flags_json: true,
+		});
+
+		expect(process.exitCode).toBeUndefined();
+		expect(envPlatform.writes.map(({ name }) => name)).toEqual(['NEW_VAR']);
+		expect(stderr()).toContain(`Skipped 2 malformed lines in ${join(actorDir, '.env')} (lines 2, 3).`);
+		expect(`${stdout()}\n${stderr()}`).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME/);
+		expectNoValues(instance);
+	});
+
 	it('fails on a name that is too long before any write', async () => {
 		writeDotEnv(`${'A'.repeat(101)}=x\nNEW_VAR=x\n`);
 
