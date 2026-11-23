@@ -85,6 +85,17 @@ describe('resolveEnvTarget', () => {
 		expect(target.actor.id).toBe('actor-1');
 	});
 
+	it('resolves a relative --dir against the current directory', async () => {
+		writeActorJson(join(root, 'actors', 'a'), { name: 'my-actor', version: '1.2' });
+		vitest.spyOn(process, 'cwd').mockReturnValue(root);
+
+		const target = await resolveEnvTarget({ dir: join('actors', 'a') });
+
+		expect(target.actorDir).toBe(join(root, 'actors', 'a'));
+		expect(target.actor.id).toBe('actor-1');
+		expect(target.versionNumber).toBe('1.2');
+	});
+
 	it('prefers --version over actor.json', async () => {
 		writeActorJson(root, { name: 'my-actor', version: '1.2' });
 

@@ -534,15 +534,20 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 // linked worktree. The .gitignore rules don't exclude either.
 export const ACTOR_FILES_HARDCODED_IGNORE = ['**/.git', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
 
-/** True for `.env` and `.env.<anything>` at any depth, except `.env.example`. These are never uploaded. */
+/**
+ * True for `.env` and `.env.<anything>` at any depth and in any letter case, as macOS and Windows read `.ENV` as `.env`,
+ * except `.env.example`. These are never uploaded. Not in ACTOR_FILES_HARDCODED_IGNORE: find-actor-dirs.ts reads that
+ * list as folder names to skip, and its glob ignore would also drop a `.env` folder (a Python venv) and can't keep
+ * `.env.example`.
+ */
 export const isDotEnvFile = (filePath: string): boolean => {
-	const name = filePath.slice(filePath.lastIndexOf('/') + 1);
+	const name = filePath.slice(filePath.lastIndexOf('/') + 1).toLowerCase();
 	return name === '.env' || (name.startsWith('.env.') && name !== '.env.example');
 };
 
 /**
  * Get Actor local files, omit files defined in .gitignore, .actorignore and .git folder
- * All dot files(.file) and folders(.folder/) are included.
+ * All dot files(.file) and folders(.folder/) are included, except local .env files (isDotEnvFile).
  */
 export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();

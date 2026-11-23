@@ -24,7 +24,7 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
 import { warnDeprecated } from '../lib/env-vars/deprecations.js';
-import { readDotEnv } from '../lib/env-vars/dotenv.js';
+import { describeMalformedLines, readDotEnv } from '../lib/env-vars/dotenv.js';
 import { hasLegacyEnvVars } from '../lib/env-vars/legacy.js';
 import { execWithLog } from '../lib/exec.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
@@ -117,7 +117,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override description =
 		`Executes Actor locally with simulated Apify environment variables.\n` +
 		`Stores data in local '${DEFAULT_LOCAL_STORAGE_DIR}' directory.\n` +
-		`Loads variables from a .env file in the Actor directory; they override the other sources.\n\n` +
+		`Loads variables from a '.env' file in the Actor directory; they override the other sources.\n\n` +
 		`NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.`;
 
 	static override group = 'Local Actor Development';
@@ -239,7 +239,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (hasLegacyEnvVars(localConfig)) warnDeprecated('environmentVariables', this.telemetryData);
 
 		// Read .env before purging storage or writing input, so an unreadable file stops the run with nothing changed.
-		const dotEnvVars = readDotEnv(cwd).vars;
+		const dotEnv = readDotEnv(cwd);
+		const malformedLinesWarning = describeMalformedLines(dotEnv);
+		if (malformedLinesWarning) warning({ message: malformedLinesWarning });
+		const dotEnvVars = dotEnv.vars;
 		cliDebugPrint('[run] loaded .env', { keys: Object.keys(dotEnvVars).length });
 
 		if (localConfig!.usesStandbyMode && !this.flags.server) {

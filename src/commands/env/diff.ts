@@ -1,6 +1,9 @@
 import process from 'node:process';
 
+import chalk from 'chalk';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { CommandExitCodes } from '../../lib/consts.js';
 import type { EnvVarComparisonStatus } from '../../lib/env-vars/diff.js';
 import { compareEnvVars } from '../../lib/env-vars/diff.js';
 import { readDotEnv } from '../../lib/env-vars/dotenv.js';
@@ -16,7 +19,7 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 	static override name = 'diff' as const;
 
 	static override description =
-		"Compares .env with the env vars of an Actor version. Exits with 0 when they're in sync and with 1 on any difference, so it fits pre-commit hooks and CI. Secrets are compared by name only.";
+		"Compares .env with the env vars of an Actor version. Exits with 0 when they're in sync and with 1 on any difference, so it fits pre-commit hooks and CI. Secrets are compared by name only. Values are never printed.";
 
 	static override examples = [
 		{
@@ -53,6 +56,16 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 			);
 		}
 
+		// The lines of an unquoted multi-line value can read as NAME=value, so with malformed lines nothing is compared.
+		const { malformedLines } = dotEnv;
+		if (malformedLines.length) {
+			const lines =
+				malformedLines.length === 1 ? `line ${malformedLines[0]} is` : `lines ${malformedLines.join(', ')} are`;
+			envFail(
+				`Can't compare ${dotEnv.path}: ${lines} malformed. Quote values that span several lines, and fix or remove the other lines.`,
+			);
+		}
+
 		const comparison = compareEnvVars(dotEnv.vars, await listPlatformEnvVars(target));
 		const namesWith = (status: EnvVarComparisonStatus) =>
 			comparison.filter((entry) => entry.status === status).map(({ name }) => name);
@@ -62,7 +75,7 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 		const valuesDiffer = namesWith('differs');
 		const inSync = !onlyInDotEnv.length && !onlyOnPlatform.length && !valuesDiffer.length;
 
-		if (!inSync) process.exitCode = 1;
+		if (!inSync) process.exitCode = CommandExitCodes.EnvDiffFound;
 
 		if (this.flags.json) {
 			printJsonToStdout({
@@ -82,10 +95,14 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 			return;
 		}
 
-		const lines = [`.env and ${describeTarget(target)} differ:`];
-		if (onlyInDotEnv.length) lines.push(`  Only in .env: ${onlyInDotEnv.join(', ')}`);
-		if (onlyOnPlatform.length) lines.push(`  Only on the platform: ${onlyOnPlatform.join(', ')}`);
-		if (valuesDiffer.length) lines.push(`  Different values: ${valuesDiffer.join(', ')}`);
-		simpleLog({ message: lines.join('\n'), stdout: true });
+		const sections = [
+			{ title: 'Only in .env:', names: onlyInDotEnv, mark: chalk.green('+') },
+			{ title: 'Only on the platform:', names: onlyOnPlatform, mark: chalk.red('-') },
+			{ title: 'Different values:', names: valuesDiffer, mark: chalk.yellow('~') },
+		]
+			.filter(({ names }) => names.length)
+			.flatMap(({ title, names, mark }) => [`  ${title}`, ...names.map((name) => `    ${mark} ${name}`)]);
+
+		simpleLog({ message: [`.env and ${describeTarget(target)} differ:`, ...sections].join('\n'), stdout: true });
 	}
 }

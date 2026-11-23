@@ -27,7 +27,15 @@ const { logMessages } = useConsoleSpy();
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { RunCommand } = await import('../../../src/commands/run.js');
 
-const RECORDED_VARS = ['FROM_SHELL', 'CRAWLEE_PURGE_ON_START', 'FROM_ACTOR_JSON', 'FROM_DOTENV', 'SECRET_REF'];
+const RECORDED_VARS = [
+	'FROM_SHELL',
+	'CRAWLEE_PURGE_ON_START',
+	'FROM_ACTOR_JSON',
+	'FROM_DOTENV',
+	'SECRET_REF',
+	'EMPTY',
+	'BAD-NAME',
+];
 
 describe('apify run with .env', () => {
 	let originalActorJson: string;
@@ -155,10 +163,25 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 		});
 	});
 
-	it('passes @secret references in .env literally', async () => {
-		writeFileSync(joinPath('.env'), 'SECRET_REF=@foo\n');
+	it('passes @secret references and empty values in .env literally', async () => {
+		writeFileSync(joinPath('.env'), 'SECRET_REF=@foo\nEMPTY=\n');
 
-		expect((await runAndReadEnv()).SECRET_REF).toBe('@foo');
+		const env = await runAndReadEnv();
+
+		expect(env.SECRET_REF).toBe('@foo');
+		expect(env.EMPTY).toBe('');
+	});
+
+	it('skips malformed .env lines and names them only by number', async () => {
+		writeFileSync(joinPath('.env'), 'FROM_DOTENV=dotenv\nNO_EQUALS_SIGN\nBAD-NAME=bad-value\n');
+
+		const env = await runAndReadEnv();
+
+		expect(env.FROM_DOTENV).toBe('dotenv');
+		expect(env['BAD-NAME']).toBeNull();
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toContain(`Skipped 2 malformed lines in ${joinPath('.env')} (lines 2, 3).`);
+		expect(stderr).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME|bad-value/);
 	});
 
 	it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
@@ -173,7 +196,7 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 			await testRunCommand(RunCommand, { flags_purge: true });
 
 			// The exit code is checked in dotenv.test.ts: useTempPath mocks node:process, so this file can't see it.
-			expect(logMessages.error.join('\n')).toContain(`Couldn't read ${joinPath('.env')}`);
+			expect(logMessages.error.join('\n')).toContain(`Couldn't read ${joinPath('.env')} (EACCES).`);
 			expect(existsSync(resultPath)).toBe(false);
 			expect(existsSync(datasetItem)).toBe(true);
 		},
