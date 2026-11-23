@@ -12,6 +12,13 @@ export class EnvIndexCommand extends ApifyCommand<typeof EnvIndexCommand> {
 
 	static override group = 'Local Actor Development';
 
+	static override examples = [
+		{
+			description: 'List the env vars of the Actor in the current directory.',
+			command: 'apify env ls',
+		},
+	];
+
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-env';
 
 	static override subcommands = [EnvLsCommand, EnvSetCommand, EnvRmCommand, EnvPushCommand];
