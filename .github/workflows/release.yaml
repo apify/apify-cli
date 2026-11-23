@@ -73,6 +73,7 @@ jobs:
         needs: [release_metadata, wait_for_checks]
         name: Update changelog
         runs-on: ubuntu-latest
+        environment: npm
         outputs:
             changelog_commitish: ${{ steps.commit.outputs.commit_long_sha }}
 
@@ -262,6 +263,7 @@ jobs:
         name: Update Homebrew Formula
         needs: [update_changelog, publish_to_npm]
         runs-on: ubuntu-latest
+        environment: npm
         steps:
             - name: Checkout repository
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -63,6 +63,7 @@ jobs:
         name: Commit versioned docs
         needs: version_docs
         runs-on: ubuntu-latest
+        environment: npm
 
         steps:
             - name: Checkout repository
