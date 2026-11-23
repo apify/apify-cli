@@ -188,6 +188,35 @@ describe('apify env diff', () => {
 		});
 	});
 
+	describe("with platform names that .env can't hold", () => {
+		beforeEach(() => {
+			envPlatform.state.actors[0].versions[0].envVars.push(
+				{ name: 'DATABASE-URL', value: SECRET_VALUE, isSecret: true },
+				{ name: 'CLEAR\u001b[2J', value: 'x', isSecret: false },
+			);
+			writeDotEnv(`PLAIN=${PLAIN_VALUE}\nAPI_KEY=\n`);
+		});
+
+		it('is in sync when they are the only difference, and names them in a warning with control characters escaped', async () => {
+			const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
+
+			expect(process.exitCode).toBeUndefined();
+			expect(stdout()).toContain('.env and tester/my-actor version 0.0 are in sync.');
+			expect(stderr()).toContain(
+				"Skipped DATABASE-URL, CLEAR\\x1b[2J: a name in .env can only have letters, digits, and underscores, and can't start with a digit.",
+			);
+			expect(`${stdout()}\n${stderr()}`).not.toContain('\u001b[2J');
+			expectNoValues(instance);
+		});
+
+		it('leaves them out of onlyOnPlatform in --json', async () => {
+			await testRunCommand(EnvDiffCommand, { flags_dir: actorDir, flags_json: true });
+
+			expect(process.exitCode).toBeUndefined();
+			expect(JSON.parse(stdout())).toMatchObject({ inSync: true, onlyOnPlatform: [] });
+		});
+	});
+
 	it('compares the version from actor.json', async () => {
 		writeActorJson(actorDir, { name: 'my-actor', version: '0.1' });
 		writeDotEnv('V01_ONLY=v01\n');

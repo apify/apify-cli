@@ -350,7 +350,7 @@ describe('apify env push', () => {
 		expectNoValues(instance);
 	});
 
-	it('skips malformed .env lines and names them only by number', async () => {
+	it('fails on malformed .env lines before any write and names them only by number', async () => {
 		writeDotEnv(`NEW_VAR=x\nNO_EQUALS_SIGN\nBAD-NAME=${PLAIN_VALUE}\n`);
 
 		const instance = await testRunCommand(EnvPushCommand, {
@@ -359,11 +359,104 @@ describe('apify env push', () => {
 			flags_json: true,
 		});
 
-		expect(process.exitCode).toBeUndefined();
-		expect(envPlatform.writes.map(({ name }) => name)).toEqual(['NEW_VAR']);
-		expect(stderr()).toContain(`Skipped 2 malformed lines in ${join(actorDir, '.env')} (lines 2, 3).`);
-		expect(`${stdout()}\n${stderr()}`).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME/);
+		expect(process.exitCode).toBe(5);
+		expect(envPlatform.writes).toEqual([]);
+		expect(stdout()).toBe('');
+		expect(stderr()).toContain(`Can't push ${join(actorDir, '.env')}: lines 2, 3 are malformed.`);
+		expect(stderr()).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME/);
 		expectNoValues(instance);
+	});
+
+	// Secret material from unquoted multi-line values and a stray line: no part of them may be pushed or printed.
+	const PEM_TAIL = 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7secretmaterialQ';
+	const MALFORMED_DOTENVS = {
+		'an unquoted PEM key': {
+			content: `PLAIN=${PLAIN_VALUE}\nKEY=-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgk+qhkiG9w0BAQEFAA/SCBKcwggSjAgEA\n${PEM_TAIL}==\n-----END PRIVATE KEY-----\n`,
+			lines: 'lines 3, 5 are',
+			material: [PEM_TAIL, 'MIIEvQIBADANBgk', 'BEGIN PRIVATE KEY'],
+		},
+		'an unquoted service account JSON': {
+			content: `PLAIN=${PLAIN_VALUE}\nGOOGLE_CREDENTIALS={\n  "type": "service_account",\n  "private_key": "-----BEGIN PRIVATE KEY-----\\nsa-key-material==\\n-----END PRIVATE KEY-----\\n",\n}\n`,
+			lines: 'lines 3, 4, 5 are',
+			material: ['sa-key-material', 'private_key', 'GOOGLE_CREDENTIALS'],
+		},
+		'a stray connection string': {
+			content: `PLAIN=${PLAIN_VALUE}\npostgres://admin:hunter2@db/app?sslmode=require\n`,
+			lines: 'line 2 is',
+			material: ['hunter2', 'postgres'],
+		},
+	};
+
+	it.each(
+		Object.entries(MALFORMED_DOTENVS).flatMap(([name, dotEnv]) => [
+			{ name, json: false, ...dotEnv },
+			{ name, json: true, ...dotEnv },
+		]),
+	)(
+		'fails without pushing or printing any part of $name (--json: $json)',
+		async ({ content, lines, material, json }) => {
+			writeDotEnv(content);
+
+			const instance = await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_yes: true, flags_json: json });
+
+			expect(process.exitCode).toBe(5);
+			expect(envPlatform.writes).toEqual([]);
+			expect(stdout()).toBe('');
+			expect(stderr()).toContain(`Can't push ${join(actorDir, '.env')}: ${lines} malformed.`);
+			for (const text of material) {
+				expect(stderr()).not.toContain(text);
+				expect(JSON.stringify((instance as unknown as Record<string, unknown>).telemetryData)).not.toContain(text);
+			}
+			expectNoValues(instance);
+		},
+	);
+
+	describe("with platform names that .env can't hold", () => {
+		beforeEach(() => {
+			envVarsOnPlatform().push(
+				{ name: 'DATABASE-URL', value: SECRET_VALUE, isSecret: true },
+				{ name: 'CLEAR\u001b[2J', value: 'x', isSecret: false },
+			);
+		});
+
+		it('keeps them with --prune and names them in a warning with control characters escaped', async () => {
+			writeDotEnv('SAME=same-value\n');
+
+			const instance = await testRunCommand(EnvPushCommand, {
+				flags_dir: actorDir,
+				flags_yes: true,
+				flags_prune: true,
+			});
+
+			expect(process.exitCode).toBeUndefined();
+			expect(envPlatform.writes.map(({ method, name }) => `${method} ${name}`)).toEqual([
+				'delete API_KEY',
+				'delete CHANGED',
+				'delete OLD_VAR',
+			]);
+			expect(envVarOnPlatform('DATABASE-URL')).toEqual({ name: 'DATABASE-URL', value: SECRET_VALUE, isSecret: true });
+			expect(envVarOnPlatform('CLEAR\u001b[2J')).toBeDefined();
+			expect(stderr()).toContain(
+				"Skipped DATABASE-URL, CLEAR\\x1b[2J: a name in .env can only have letters, digits, and underscores, and can't start with a digit.",
+			);
+			expect(stdout()).not.toMatch(/DATABASE-URL|CLEAR/);
+			expect(`${stdout()}\n${stderr()}`).not.toContain('\u001b[2J');
+			expectNoValues(instance);
+		});
+
+		it('leaves them out of the --json changes', async () => {
+			writeDotEnv('SAME=same-value\n');
+
+			await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_yes: true, flags_json: true });
+
+			expect(JSON.parse(stdout()).changes.map(({ name }: { name: string }) => name)).toEqual([
+				'API_KEY',
+				'CHANGED',
+				'OLD_VAR',
+				'SAME',
+			]);
+			expect(envPlatform.writes).toEqual([]);
+		});
 	});
 
 	it('fails on a name that is too long before any write', async () => {
