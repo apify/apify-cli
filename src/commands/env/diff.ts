@@ -1,6 +1,7 @@
 import process from 'node:process';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { CommandExitCodes } from '../../lib/consts.js';
 import type { EnvVarComparisonStatus } from '../../lib/env-vars/diff.js';
 import { compareEnvVars } from '../../lib/env-vars/diff.js';
 import { readDotEnv } from '../../lib/env-vars/dotenv.js';
@@ -62,7 +63,7 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 		const valuesDiffer = namesWith('differs');
 		const inSync = !onlyInDotEnv.length && !onlyOnPlatform.length && !valuesDiffer.length;
 
-		if (!inSync) process.exitCode = 1;
+		if (!inSync) process.exitCode = CommandExitCodes.EnvDiffFound;
 
 		if (this.flags.json) {
 			printJsonToStdout({

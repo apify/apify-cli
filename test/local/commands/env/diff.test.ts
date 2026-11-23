@@ -5,6 +5,7 @@ import process from 'node:process';
 
 import { EnvDiffCommand } from '../../../../src/commands/env/diff.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
+import { CommandExitCodes } from '../../../../src/lib/consts.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { resetCwdCaches } from '../../../__setup__/reset-cwd-caches.js';
 
@@ -97,7 +98,7 @@ describe('apify env diff', () => {
 
 		const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
 
-		expect(process.exitCode).toBe(1);
+		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
 		expect(stdout()).toContain('.env and tester/my-actor version 0.0 differ:');
 		expect(stdout()).toContain('Only in .env: NEW_A, NEW_B');
 		expect(stdout()).not.toContain('Only on the platform');
@@ -110,7 +111,7 @@ describe('apify env diff', () => {
 
 		const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
 
-		expect(process.exitCode).toBe(1);
+		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
 		expect(stdout()).toContain('Only on the platform: API_KEY');
 		expect(stdout()).not.toContain('Only in .env');
 		expect(stdout()).not.toContain('Different values');
@@ -122,7 +123,7 @@ describe('apify env diff', () => {
 
 		const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
 
-		expect(process.exitCode).toBe(1);
+		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
 		expect(stdout()).toContain('Different values: PLAIN');
 		expect(stdout()).not.toContain('Only');
 		expectNoValues(instance);
@@ -133,7 +134,7 @@ describe('apify env diff', () => {
 
 		const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir, flags_json: true });
 
-		expect(process.exitCode).toBe(1);
+		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
 		expect(JSON.parse(stdout())).toEqual({
 			ok: true,
 			operation: 'env-diff',
