@@ -1,4 +1,4 @@
-import { countLegacyEnvVars } from '../../../../src/lib/env-vars/legacy.js';
+import { countLegacyEnvVars, hasLegacyEnvVars } from '../../../../src/lib/env-vars/legacy.js';
 
 describe('countLegacyEnvVars', () => {
 	it.each([
@@ -28,5 +28,20 @@ describe('countLegacyEnvVars', () => {
 			envVarsCount: 4,
 			secretRefsCount: 0,
 		});
+	});
+});
+
+describe('hasLegacyEnvVars', () => {
+	it.each([
+		['no config', undefined],
+		['no environmentVariables', { name: 'actor' }],
+		['an empty environmentVariables', { environmentVariables: {} }],
+		['a non-object environmentVariables', { environmentVariables: 'A=1' }],
+	])('is false for %s', (_label, config) => {
+		expect(hasLegacyEnvVars(config)).toBe(false);
+	});
+
+	it('is true for a non-empty environmentVariables', () => {
+		expect(hasLegacyEnvVars({ environmentVariables: { A: '' } })).toBe(true);
 	});
 });

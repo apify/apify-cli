@@ -113,12 +113,8 @@ describe('[api] apify push', () => {
 
 			expect(createdActorVersion!.versionNumber).to.be.eql(actorJson.version);
 			expect(createdActorVersion!.buildTag).to.be.eql('latest');
-			expect(createdActorVersion!.envVars).to.be.eql([
-				{
-					name: 'MY_ENV_VAR',
-					value: 'envVarValue',
-				},
-			]);
+			// apify push doesn't send environmentVariables from actor.json
+			expect(createdActorVersion!.envVars ?? []).to.be.eql([]);
 			// TODO: vlad, fix this too
 			expect((createdActorVersion as any)!.sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(createdActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
@@ -160,12 +156,7 @@ describe('[api] apify push', () => {
 
 			expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
 			expect(testActorVersion!.buildTag).to.be.eql('latest');
-			expect(testActorVersion!.envVars).to.be.eql([
-				{
-					name: 'MY_ENV_VAR',
-					value: 'envVarValue',
-				},
-			]);
+			expect(testActorVersion!.envVars ?? []).to.be.eql([]);
 			expect((testActorVersion as any).sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 
@@ -222,6 +213,72 @@ describe('[api] apify push', () => {
 			expect(testActorVersion!.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
 			expect((testActorVersion as any).sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should leave the platform env vars untouched when actor.json has environmentVariables',
+		async () => {
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			const originalEnvironmentVariables = actorJson.environmentVariables;
+
+			// The platform version is the one push updates, so the test can't pass by pushing into another version.
+			const testActor = await testUserClient.actors().create({
+				...TEST_ACTOR,
+				name: useUniqueId('cli-push-ignore-env-vars'),
+				versions: [
+					{
+						...TEST_ACTOR.versions![0],
+						versionNumber: actorJson.version,
+						envVars: [
+							{ name: 'CONSOLE_ONLY', value: 'consoleValue' },
+							{ name: 'CONSOLE_SECRET', value: 'consoleSecret', isSecret: true },
+						],
+					},
+				],
+			});
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const envVarsBefore = await testActorClient.version(actorJson.version).envVars().list();
+
+			try {
+				// A different value, a new name, and an @ref without a stored secret, which used to fail the push.
+				actorJson.environmentVariables = {
+					CONSOLE_ONLY: 'localValue',
+					LOCAL_ONLY: 'localOnly',
+					LOCAL_SECRET: '@cliPushMissingSecret',
+				};
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				resetCwdCaches();
+
+				const pushInstance = await testRunCommand(ActorsPushCommand, {
+					args_actorId: testActor.id,
+					flags_force: true,
+				});
+
+				const versionAfter = await testActorClient.version(actorJson.version).get();
+				const envVarsAfter = await testActorClient.version(actorJson.version).envVars().list();
+
+				const byEnvVarName = (a: { name?: string }, b: { name?: string }) =>
+					String(a.name).localeCompare(String(b.name));
+				expect(envVarsAfter.items.sort(byEnvVarName)).to.be.eql(envVarsBefore.items.sort(byEnvVarName));
+				expect(envVarsAfter.items.map((envVar) => envVar.name).sort()).to.be.eql(['CONSOLE_ONLY', 'CONSOLE_SECRET']);
+				// The push did reach this version: its source files are the local ones now.
+				expect((versionAfter as any).sourceFiles.length).to.be.greaterThan(0);
+				expect(logMessages.error.join('\n')).to.include('applies to local runs only');
+				// eslint-disable-next-line dot-notation
+				expect(pushInstance['telemetryData'].push).to.be.eql({
+					actorId: testActor.id,
+					wasCreated: false,
+					envVarsCount: 3,
+					secretRefsCount: 1,
+				});
+			} finally {
+				actorJson.environmentVariables = originalEnvironmentVariables;
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				await testActorClient.delete();
+			}
 		},
 		TEST_TIMEOUT,
 	);

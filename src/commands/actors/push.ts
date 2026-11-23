@@ -33,7 +33,7 @@ import {
 	resolveDockerContext,
 	toPosix,
 } from '../../lib/docker-context.js';
-import { countLegacyEnvVars } from '../../lib/env-vars/legacy.js';
+import { countLegacyEnvVars, hasLegacyEnvVars } from '../../lib/env-vars/legacy.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
 import { isAbortingJobOnSignal, useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -49,7 +49,6 @@ import {
 	monorepoOutdatedRuntimeMessage,
 	pushActorRuntimeSourceContext,
 } from '../../lib/runtime/source-context.js';
-import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
 	createActZip,
 	createSourceFiles,
@@ -444,6 +443,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`Files matched by .gitignore and .actorignore are excluded. ` +
 		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files. ` +
 		`.env and .env.* files are never uploaded, except .env.example.\n` +
+		`Env vars aren't sent: "environmentVariables" in '${LOCAL_CONFIG_PATH}' applies to local runs only. Set platform env vars with apify env push or in Apify Console.\n` +
 		`If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push uploads the whole Git repository: ` +
 		`the Actor folder as above, and everything else that Git tracks or doesn't ignore (.actorignore doesn't apply there). ` +
 		`Outside Git, it uploads the whole Docker context as above.\n` +
@@ -514,7 +514,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 		}),
 		'allow-missing-secrets': Flags.boolean({
-			description: 'Allow the command to continue even when secret values are not found in the local secrets storage.',
+			description: "Deprecated, has no effect: apify push doesn't send env vars.",
 			required: false,
 			default: false,
 		}),
@@ -534,6 +534,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	};
 
 	async run() {
+		if (this.flags.allowMissingSecrets) {
+			warning({
+				message: '--allow-missing-secrets is deprecated and has no effect. apify push no longer sends env vars.',
+			});
+		}
+
 		// Resolving with `.` will mean stay in the cwd folder, whereas anything else in dir will be resolved. If users pass in a full path (`/home/...`, it will correctly resolve to that)
 		const cwd = resolve(process.cwd(), this.flags.dir ?? '.');
 
@@ -759,6 +765,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			envVarsCount: (this.telemetryData.push?.envVarsCount ?? 0) + envVarCounts.envVarsCount,
 			secretRefsCount: (this.telemetryData.push?.secretRefsCount ?? 0) + envVarCounts.secretRefsCount,
 		};
+
+		if (hasLegacyEnvVars(actorConfig)) {
+			warning({
+				message: `"environmentVariables" in ${LOCAL_CONFIG_PATH} applies to local runs only. apify push doesn't set env vars on the platform. Run apify env push, or set them in Apify Console.`,
+			});
+		}
 
 		// A monorepo Actor builds from a Docker context above its folder, so the push uploads its repository
 		// (or, outside Git, the context) and tells the platform where the Actor lies in it.
@@ -1013,11 +1025,6 @@ Skipping push. Use --force to override.`,
 		}
 
 		// Update Actor version
-		const envVars = actorConfig!.environmentVariables
-			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>, undefined, {
-					allowMissing: this.flags.allowMissingSecrets,
-				})
-			: undefined;
 		// The flag wins when passed, then the actor.json field; undefined when neither is set, so the value
 		// stored on the platform is preserved
 		const applyEnvVarsToBuild =
@@ -1053,7 +1060,7 @@ Skipping push. Use --force to override.`,
 
 		const actorVersionSource = { tarballUrl, sourceFiles, sourceType, ...(actorPath ? { actorPath } : {}) };
 		if (actorCurrentVersion) {
-			const actorVersionModifier = { ...actorVersionSource, buildTag, envVars, applyEnvVarsToBuild };
+			const actorVersionModifier = { ...actorVersionSource, buildTag, applyEnvVarsToBuild };
 			// TODO: fix this type too -.-
 			await actorClient.version(version).update(actorVersionModifier as never);
 			run({ message: `Updated version ${version} for Actor ${actor.name}.` });
@@ -1062,7 +1069,6 @@ Skipping push. Use --force to override.`,
 				versionNumber: version,
 				...actorVersionSource,
 				buildTag,
-				envVars,
 				applyEnvVarsToBuild,
 			};
 
