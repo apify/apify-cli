@@ -4,7 +4,7 @@ import { YesFlag } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { envFail } from '../../lib/env-vars/errors.js';
 import { envTargetFlags } from '../../lib/env-vars/flags.js';
-import { describeTarget, printRebuildReminder, targetJson } from '../../lib/env-vars/output.js';
+import { describeTarget, escapeControlChars, printRebuildReminder, targetJson } from '../../lib/env-vars/output.js';
 import { deletePlatformEnvVar, getPlatformEnvVar, validateEnvVarName } from '../../lib/env-vars/platform.js';
 import { resolveEnvTarget } from '../../lib/env-vars/target.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
@@ -53,15 +53,16 @@ export class EnvRmCommand extends ApifyCommand<typeof EnvRmCommand> {
 		const { name } = this.args;
 
 		validateEnvVarName(name);
+		const shownName = escapeControlChars(name);
 
 		const target = await resolveEnvTarget(this.flags);
 
 		if (!(await getPlatformEnvVar(target, name))) {
-			envFail(`${name} doesn't exist on ${describeTarget(target)}.`, CommandExitCodes.NotFound);
+			envFail(`${shownName} doesn't exist on ${describeTarget(target)}.`, CommandExitCodes.NotFound);
 		}
 
 		const confirmed = await useYesNoConfirm({
-			message: `Delete ${name} from ${describeTarget(target)}?`,
+			message: `Delete ${shownName} from ${describeTarget(target)}?`,
 			default: false,
 			preAnswered: this.flags.yes || undefined,
 			errorMessageForStdin: 'apify env rm asks before it deletes anything. To delete without a prompt, pass --yes.',
@@ -75,13 +76,13 @@ export class EnvRmCommand extends ApifyCommand<typeof EnvRmCommand> {
 		try {
 			await deletePlatformEnvVar(target, name);
 		} catch (err) {
-			envFail(`Couldn't delete ${name} from ${describeTarget(target)}: ${(err as Error).message}`, 1);
+			envFail(`Couldn't delete ${shownName} from ${describeTarget(target)}: ${(err as Error).message}`, 1);
 		}
 
 		if (this.flags.json) {
 			printJsonToStdout({ ok: true, operation: 'env-rm', ...targetJson(target), name });
 		} else {
-			success({ message: `Deleted ${name} from ${describeTarget(target)}.`, stdout: true });
+			success({ message: `Deleted ${shownName} from ${describeTarget(target)}.`, stdout: true });
 		}
 
 		printRebuildReminder(target);

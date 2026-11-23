@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 
 import { CompactMode, ResponsiveTable } from '../commands/responsive-table.js';
-import { info } from '../outputs.js';
+import { info, warning } from '../outputs.js';
 import type { EnvPushAction, EnvPushStep } from './diff.js';
 import { envPushWrites } from './diff.js';
+import { isValidDotEnvName } from './dotenv.js';
 import type { PlatformEnvVar } from './platform.js';
 import type { EnvTarget } from './target.js';
 
@@ -18,8 +19,20 @@ export function targetJson(target: EnvTarget): { actor: { id: string; name: stri
 }
 
 /** Shows control characters other than a newline as `\xNN`, so a name or value can't send escape sequences to the terminal. */
-const escapeControlChars = (text: string) =>
+export const escapeControlChars = (text: string) =>
 	text.replace(/\p{Cc}/gu, (char) => (char === '\n' ? char : `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`));
+
+/** Leaves out the platform variables whose names .env can't hold, such as `BAD-NAME`, and names them in a warning. */
+export function skipInvalidDotEnvNames(envVars: PlatformEnvVar[]): PlatformEnvVar[] {
+	const skipped = envVars.filter(({ name }) => !isValidDotEnvName(name)).map(({ name }) => escapeControlChars(name));
+	if (skipped.length) {
+		warning({
+			message: `Skipped ${skipped.join(', ')}: a name in .env can only have letters, digits, and underscores, and can't start with a digit.`,
+		});
+	}
+
+	return envVars.filter(({ name }) => isValidDotEnvName(name));
+}
 
 /** A table of names, types, and plain values. A secret's value is never shown. */
 export function renderEnvVarTable(envVars: PlatformEnvVar[]): string {
