@@ -9,7 +9,7 @@ import { compareEnvVars } from '../../lib/env-vars/diff.js';
 import { failOnMalformedLines, readDotEnv } from '../../lib/env-vars/dotenv.js';
 import { envFail } from '../../lib/env-vars/errors.js';
 import { envTargetFlags } from '../../lib/env-vars/flags.js';
-import { describeTarget, targetJson } from '../../lib/env-vars/output.js';
+import { describeTarget, skipInvalidDotEnvNames, targetJson } from '../../lib/env-vars/output.js';
 import { listPlatformEnvVars } from '../../lib/env-vars/platform.js';
 import { resolveEnvTarget } from '../../lib/env-vars/target.js';
 import { simpleLog, success } from '../../lib/outputs.js';
@@ -58,7 +58,7 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 
 		failOnMalformedLines(dotEnv, 'compare');
 
-		const comparison = compareEnvVars(dotEnv.vars, await listPlatformEnvVars(target));
+		const comparison = compareEnvVars(dotEnv.vars, skipInvalidDotEnvNames(await listPlatformEnvVars(target)));
 		const namesWith = (status: EnvVarComparisonStatus) =>
 			comparison.filter((entry) => entry.status === status).map(({ name }) => name);
 
