@@ -136,6 +136,7 @@ The command writes the env vars of the Actor version into `.env`:
 - Without a `.env`, it creates one, unless the version has no env vars.
 - With an existing `.env`, it shows the changes and asks first. It updates plain variables, and keeps comments, keys that exist only locally, and the local value of secrets. Pass `--yes` to skip the prompt.
 - It skips the variables whose name can't be in `.env`, such as `MY-VAR`, and names them in a warning.
+- It skips a plain value that `.env` can't hold, such as one with Windows line endings, and names the variable and the reason in a warning. It still writes the other variables, and a local value for that variable stays.
 
 ### Compare `.env` with the platform
 
