@@ -15,9 +15,17 @@ export function targetJson(target: EnvTarget): { actor: { id: string; name: stri
 	return { actor: { id: target.actor.id, name: target.actorLabel }, version: target.versionNumber };
 }
 
-/** Shows control characters other than a newline as `\xNN`, so a name or value can't send escape sequences to the terminal. */
-export const escapeControlChars = (text: string) =>
-	text.replace(/\p{Cc}/gu, (char) => (char === '\n' ? char : `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`));
+/**
+ * Shows control characters as `\xNN`, so a name or value can't send escape sequences to the terminal. Newlines stay
+ * unless `keepNewline` is false.
+ */
+const escapeControlChars = (text: string, { keepNewline = true } = {}) =>
+	text.replace(/\p{Cc}/gu, (char) =>
+		keepNewline && char === '\n' ? char : `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`,
+	);
+
+/** A name to print in a message: every control character is escaped, newlines too, so it can't print extra lines. */
+export const escapeName = (name: string) => escapeControlChars(name, { keepNewline: false });
 
 /** A table of names, types, and plain values. A secret's value is never shown. */
 export function renderEnvVarTable(envVars: PlatformEnvVar[]): string {
