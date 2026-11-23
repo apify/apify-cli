@@ -8,6 +8,7 @@ import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import {
 	checkDotEnvWritable,
+	describeMalformedLines,
 	ensureDotEnvGitignored,
 	isDotEnvGitignored,
 	readDotEnv,
@@ -96,6 +97,9 @@ export class EnvMigrateCommand extends ApifyCommand<typeof EnvMigrateCommand> {
 		}
 
 		const dotEnv = readDotEnv(actorDir);
+		const malformedLinesWarning = describeMalformedLines(dotEnv);
+		if (malformedLinesWarning) warning({ message: `${malformedLinesWarning} They stay in .env unchanged.` });
+
 		// actor.json order, so new keys land in .env in the order the project had them.
 		const newKeys = Object.keys(values).filter((name) => !Object.hasOwn(dotEnv.vars, name));
 		const names = Object.keys(values).sort(byName);

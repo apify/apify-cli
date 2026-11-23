@@ -214,6 +214,20 @@ describe('apify env migrate', () => {
 		expectNoValues(instance);
 	});
 
+	it('keeps malformed .env lines and names them only by number', async () => {
+		writeFileSync(dotEnvPath(), 'LOCAL=1\nNO_EQUALS_SIGN\nBAD-NAME=bad-value\n');
+		writeActorJson(actorJsonWith({ PLAIN: 'p' }));
+
+		await testRunCommand(EnvMigrateCommand, { flags_dir: actorDir, flags_yes: true });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(readDotEnvFile()).toBe('LOCAL=1\nNO_EQUALS_SIGN\nBAD-NAME=bad-value\nPLAIN=p\n');
+		expect(stderr()).toContain(
+			`Skipped 2 malformed lines in ${dotEnvPath()} (lines 2, 3). They stay in .env unchanged.`,
+		);
+		expect(`${stdout()}\n${stderr()}`).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME|bad-value/);
+	});
+
 	it('keeps the comments and tab indentation of actor.json', async () => {
 		writeActorJson(
 			'{\n\t// The Actor\n\t"actorSpecification": 1,\n\t"name": "my-actor",\n\t"environmentVariables": {\n\t\t"PLAIN": "p", // a value\n\t\t"N": 5\n\t},\n\t"version": "0.0" // tail\n}\n',
