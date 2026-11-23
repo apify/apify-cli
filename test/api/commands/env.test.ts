@@ -139,7 +139,7 @@ describe('[api] apify env set and rm', () => {
 			versions: [
 				{
 					versionNumber: '0.0',
-					sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES as never,
+					sourceType: ActorSourceType.SourceFiles,
 					buildTag: 'latest',
 					sourceFiles: [],
 				},

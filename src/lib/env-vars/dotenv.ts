@@ -11,24 +11,38 @@ export interface DotEnvFile {
 	/** Empty when the file doesn't exist. */
 	content: string;
 	vars: Record<string, string>;
-	/** 1-based numbers of the lines that aren't a `NAME=value` assignment with a valid name. They aren't in `vars`. */
+	/**
+	 * 1-based numbers of the lines that aren't a `NAME=value` assignment with a valid name and a value without a NUL
+	 * character. They aren't in `vars`.
+	 */
 	malformedLines: number[];
 }
 
-const VALID_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+// Setting __proto__ on an object does nothing, so the vars could never hold it.
+const VALID_NAME = /^(?!__proto__$)[A-Za-z_][A-Za-z0-9_]*$/;
 
 /** Whether a variable with this name can be in .env: only letters, digits, and underscores, not starting with a digit. */
 export const isValidDotEnvName = (name: string) => VALID_NAME.test(name);
 const QUOTES = ['"', "'", '`'];
 
-const trimSpaces = (text: string) => text.replace(/^[ \t]+|[ \t]+$/g, '');
+const isSpace = (char: string) => char === ' ' || char === '\t';
+
+/** Trims spaces and tabs with a loop: a regex for the end retries every run of spaces inside the text, which is quadratic. */
+const trimSpaces = (text: string) => {
+	let start = 0;
+	let end = text.length;
+	while (start < end && isSpace(text[start])) start++;
+	while (end > start && isSpace(text[end - 1])) end--;
+	return text.slice(start, end);
+};
 
 /**
  * Parses .env content like `util.parseEnv` on Node.js 22.16 and later, on every Node.js version: on 22.1 to 22.15 and
  * 23, `util.parseEnv` turns a line without `=`, an indented comment, or `=` in a last-line value into wrong variables.
  * Unlike `util.parseEnv`, a value of only spaces is empty instead of taking the next line, `export NAME=` sets `NAME`,
  * and an indented comment is always a comment. A line that isn't `NAME=value` with a valid env var name isn't in
- * `vars`: only its number is kept, so its content is never printed.
+ * `vars`: only its number is kept, so its content is never printed. Neither is a value with a NUL character, which a
+ * process can't get in its environment.
  */
 export function parseDotEnv(content: string): Pick<DotEnvFile, 'vars' | 'malformedLines'> {
 	const lines = content.replaceAll('\r', '').split('\n');
@@ -72,7 +86,7 @@ export function parseDotEnv(content: string): Pick<DotEnvFile, 'vars' | 'malform
 			}
 		}
 
-		if (VALID_NAME.test(name)) vars[name] = value;
+		if (VALID_NAME.test(name) && !value.includes('\0')) vars[name] = value;
 		else malformedLines.push(lineNumber);
 	}
 
@@ -133,26 +147,35 @@ export function readDotEnv(actorDir: string): DotEnvFile {
 	return { path, exists: true, content, ...parseDotEnv(content) };
 }
 
+const dotEnvValueCandidates = (value: string) => [
+	...(/^[^\s#'"`]*$/.test(value) ? [value] : []),
+	...(value.includes("'") ? [] : [`'${value}'`]),
+	...(value.includes('`') ? [] : [`\`${value}\``]),
+	...(value.includes('"') ? [] : [`"${value}"`]),
+];
+
+const findDotEnvValue = (value: string) =>
+	dotEnvValueCandidates(value).find((candidate) => parseDotEnv(`K=${candidate}`).vars.K === value);
+
+/** Why .env can't hold the value so that it reads back the same, or undefined when it can. It never quotes the value. */
+export function describeUnwritableDotEnvValue(value: string): string | undefined {
+	if (findDotEnvValue(value) !== undefined) return undefined;
+
+	if (value.includes('\r')) return "it has a carriage return, as in Windows line endings, which .env can't hold";
+	if (value.includes('\0')) return "it has a NUL character, which .env can't hold";
+	if (!dotEnvValueCandidates(value).length) return 'it contains every quote character';
+	return "it can't be quoted so that it reads back the same";
+}
+
 /**
  * The value as it goes after `NAME=` in .env, so that parsing it gives the value back. Values that need it are quoted
  * with ' or `, which keep the value literal. Double quotes, which turn \n into a new line, are the last resort for a
  * value that contains both, and only when the value reads back the same. `name` only names the variable in the error.
  */
 export function serializeDotEnvValue(name: string, value: string): string {
-	const candidates = [
-		...(/^[^\s#'"`]*$/.test(value) ? [value] : []),
-		...(value.includes("'") ? [] : [`'${value}'`]),
-		...(value.includes('`') ? [] : [`\`${value}\``]),
-		...(value.includes('"') ? [] : [`"${value}"`]),
-	];
-
-	const serialized = candidates.find((candidate) => parseDotEnv(`K=${candidate}`).vars.K === value);
+	const serialized = findDotEnvValue(value);
 	if (serialized === undefined) {
-		envFail(
-			candidates.length
-				? `The value of ${name} can't be written to .env so that it reads back the same.`
-				: `The value of ${name} can't be written to .env: it contains every quote character.`,
-		);
+		envFail(`The value of ${name} can't be written to .env: ${describeUnwritableDotEnvValue(value)}.`);
 	}
 
 	return serialized;
@@ -178,8 +201,10 @@ export function updateDotEnvContent(content: string, updates: Record<string, str
 		const start = i;
 		const quote = lines[i].slice(match[0].length).trimStart()[0];
 		if (QUOTES.includes(quote) && !lines[i].slice(lines[i].indexOf(quote, match[0].length) + 1).includes(quote)) {
-			const end = lines.findIndex((line, j) => j > i && line.includes(quote));
-			if (end !== -1) i = end;
+			// Searches from the next line on: a search from line 0 for every such value would be quadratic.
+			let end = i + 1;
+			while (end < lines.length && !lines[end].includes(quote)) end++;
+			if (end < lines.length) i = end;
 		}
 
 		assignments.set(match[2], { start, end: i, prefix: match[1] });
