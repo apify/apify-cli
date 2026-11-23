@@ -25,6 +25,7 @@ MYSQL_PASSWORD='p4ss word'
 - Values are literal. `@name` isn't a secret reference, and `$OTHER` isn't expanded. Lines that start with `#` are comments, and an `export ` prefix is allowed.
 - Quote a value that contains spaces or `#`. Single quotes and backticks keep the value as written and can span lines. Double quotes turn `\n` into a new line.
 - When a key appears twice, the last line wins.
+- A name can only have letters, digits, and underscores, and can't start with a digit. A line that isn't empty, a comment, or a `NAME=value` assignment with such a name is malformed. `apify run`, `apify env push`, `apify env pull`, and `apify env migrate` skip malformed lines and warn with their line numbers, never their content. `apify env diff` stops with an error instead. Quote a value that spans several lines, or its other lines are malformed.
 
 ### Precedence in `apify run`
 
@@ -130,6 +131,7 @@ The command writes the env vars of the Actor version into `.env`:
 
 - Without a `.env`, it creates one, unless the version has no env vars.
 - With an existing `.env`, it shows the changes and asks first. It updates plain variables, and keeps comments, keys that exist only locally, and the local value of secrets. Pass `--yes` to skip the prompt.
+- It skips the variables whose name can't be in `.env`, such as `MY-VAR`, and names them in a warning.
 
 ### Compare `.env` with the platform
 
@@ -137,7 +139,21 @@ The command writes the env vars of the Actor version into `.env`:
 apify env diff
 ```
 
-The command lists the keys that exist only in `.env`, the keys that exist only on the platform, and the plain variables whose values differ. It exits with 0 when `.env` and the Actor version are in sync and with 1 on any difference. With `--json`, it prints `inSync`, `onlyInDotEnv`, `onlyOnPlatform`, and `valuesDiffer`. The output never contains values.
+The command lists the keys that exist only in `.env`, the keys that exist only on the platform, and the plain variables whose values differ:
+
+```text
+.env and username/my-actor version 0.0 differ:
+  Only in .env:
+    + NEW_VAR
+  Only on the platform:
+    - OLD_VAR
+  Different values:
+    ~ LOG_LEVEL
+```
+
+It exits with 0 when `.env` and the Actor version are in sync and with 1 on any difference. With `--json`, it prints `inSync`, `onlyInDotEnv`, `onlyOnPlatform`, and `valuesDiffer`. The output never contains values.
+
+When `.env` has malformed lines, the command compares nothing and exits with 5. The lines of an unquoted value that spans several lines can look like `NAME=value`, so their text would show up as names. The error names the malformed lines by number only.
 
 ## Secrets
 
@@ -170,7 +186,7 @@ apify push --force
 
 If your project keeps its variables in `environmentVariables` in `.actor/actor.json`, move them to `.env` and the platform:
 
-1. Run `apify env migrate`. It shows what moves and asks first. Then it writes the values to `.env`, resolves `@secret` references from the local secrets store, adds `.env` to `.gitignore`, and removes `environmentVariables` from `.actor/actor.json`. Keys already in `.env` keep their value. The local secrets store is `~/.apify/secrets.json`, which `apify secrets add` wrote in earlier CLI versions. When a referenced secret isn't in it, the command stops; pass `--allow-missing-secrets` to write its key with an empty value instead.
+1. Run `apify env migrate`. It shows what moves and asks first. Then it writes the values to `.env`, resolves `@secret` references from the local secrets store, adds `.env` to `.gitignore`, and removes `environmentVariables` from `.actor/actor.json`. Keys already in `.env` keep their value. The local secrets store is `~/.apify/secrets.json`, which `apify secrets add` wrote in earlier CLI versions. When a referenced secret isn't in it, the command stops; pass `--allow-missing-secrets` to write its key with an empty value instead. When a name can't be in `.env`, the command stops and changes nothing; rename the variable in `.actor/actor.json` first.
 1. Run `apify env push` to set the values on the platform. Variables that exist only in Apify Console stay unless you pass `--prune`.
 
 ```bash
@@ -216,4 +232,4 @@ apify env diff || { echo "The platform env vars differ from .env. Run apify env 
 
 Make the hook executable with `chmod +x .git/hooks/pre-commit`. The hook runs in the repository root, so in a monorepo add `--dir <path>` for each Actor. It also stops the commit when the check can't run, for example when you aren't logged in; the error above the message says why.
 
-In CI, `.env` isn't in the repository, because it's gitignored. Create it before `apify env diff` runs, for example from your CI provider's secrets, and log in, for example by setting `APIFY_TOKEN`. Without a `.env`, `apify env diff` fails with exit code 5.
+In CI, `.env` isn't in the repository, because it's gitignored. Create it before `apify env diff` runs, for example from your CI provider's secrets, and log in, for example by setting `APIFY_TOKEN`. Without a `.env`, or with malformed lines in it, `apify env diff` fails with exit code 5.

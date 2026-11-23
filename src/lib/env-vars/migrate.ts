@@ -25,7 +25,7 @@ export function readActorJsonDocument(actorDir: string): ActorJsonDocument {
 		if (code === 'ENOENT') {
 			envFail(`No .actor/actor.json in ${actorDir}. Run the command in an Actor directory, or pass --dir <path>.`);
 		}
-		envFail(`Couldn't read ${path}: ${message}`, CommandExitCodes.InvalidActorJson);
+		envFail(`Couldn't read ${path} (${code ?? message}).`, CommandExitCodes.InvalidActorJson);
 	}
 
 	let config: unknown;
@@ -54,7 +54,7 @@ export function readLegacySecrets(): Record<string, string> {
 	} catch (err) {
 		const { code, message } = err as NodeJS.ErrnoException;
 		if (code === 'ENOENT') return {};
-		envFail(`Couldn't read ${path}: ${message}`);
+		envFail(`Couldn't read ${path} (${code ?? message}).`);
 	}
 
 	let secrets: unknown;
