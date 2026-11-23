@@ -1242,6 +1242,51 @@ FLAGS
 <!-- actor-deploy-commands-end -->
 <!-- prettier-ignore-end -->
 
+#### Actor environment variables
+
+Use these commands to manage the environment variables of an Actor version on Apify platform, and to keep them in sync with a local `.env` file.
+
+<!-- prettier-ignore-start -->
+<!-- actor-env-commands-start -->
+##### `apify env`
+
+```sh
+DESCRIPTION
+  Manage the environment variables of an Actor version on the Apify platform, 
+  and keep them in sync with a local .env file. Changes need a rebuild before 
+  runs see them.
+
+SUBCOMMANDS
+  env ls  Lists the env vars of an Actor version on the Apify platform.
+          Secret values stay hidden.
+```
+
+##### `apify env ls`
+
+```sh
+DESCRIPTION
+  Lists the env vars of an Actor version on the Apify platform. Secret values 
+  stay hidden.
+
+USAGE
+  $ apify env ls [--actor <value>] [--dir <value>] [--json]
+                 [--profile <value>] [-v <value>]
+
+FLAGS
+      --actor=<value>    ID or "username/name" of the Actor. Use
+                         it to target an Actor without a local project.
+      --dir=<value>      Directory of the Actor and its .env
+                         file. Use it to pick an Actor folder in a monorepo.
+                         Defaults to the current directory.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -v, --version=<value>  Actor version. Defaults to "version"
+                         in '.actor/actor.json', then to 0.0.
+```
+<!-- actor-env-commands-end -->
+<!-- prettier-ignore-end -->
+
 #### Actor builds
 
 Use these commands to manage Actor build processes. They help you create, monitor, and maintain versioned snapshots of your Actors that can be executed on Apify platform.
