@@ -16,7 +16,7 @@ export function targetJson(target: EnvTarget): { actor: { id: string; name: stri
 }
 
 /** Shows control characters other than a newline as `\xNN`, so a name or value can't send escape sequences to the terminal. */
-const escapeControlChars = (text: string) =>
+export const escapeControlChars = (text: string) =>
 	text.replace(/\p{Cc}/gu, (char) => (char === '\n' ? char : `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`));
 
 /** A table of names, types, and plain values. A secret's value is never shown. */
