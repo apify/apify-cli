@@ -17,7 +17,16 @@ export interface DotEnvFile {
 const VALID_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const QUOTES = ['"', "'", '`'];
 
-const trimSpaces = (text: string) => text.replace(/^[ \t]+|[ \t]+$/g, '');
+const isSpace = (char: string) => char === ' ' || char === '\t';
+
+/** Trims spaces and tabs with a loop: a regex for the end retries every run of spaces inside the text, which is quadratic. */
+const trimSpaces = (text: string) => {
+	let start = 0;
+	let end = text.length;
+	while (start < end && isSpace(text[start])) start++;
+	while (end > start && isSpace(text[end - 1])) end--;
+	return text.slice(start, end);
+};
 
 /**
  * Parses .env content like `util.parseEnv` on Node.js 22.16 and later, on every Node.js version: on 22.1 to 22.15 and

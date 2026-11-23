@@ -140,6 +140,16 @@ describe('readDotEnv', () => {
 		expect(vars.KEY_4999).toBe('value number 4999 with some text');
 	});
 
+	it('reads a long run of spaces inside a line in linear time', () => {
+		const spaces = ' '.repeat(100_000);
+		const start = performance.now();
+
+		const { vars } = read(`TOKEN=abc${spaces}def\nQUOTED="abc${spaces}def"\n`);
+
+		expect(performance.now() - start).toBeLessThan(1000);
+		expect(vars).toEqual({ TOKEN: `abc${spaces}def`, QUOTED: `abc${spaces}def` });
+	});
+
 	it('keeps the last value of a duplicate key', () => {
 		expect(read('A=one\nA=two\n').vars).toEqual({ A: 'two' });
 	});
