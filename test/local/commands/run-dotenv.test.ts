@@ -161,6 +161,18 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 		expect(stderr).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME|bad-value/);
 	});
 
+	it('skips a value with a NUL character and never prints it', async () => {
+		writeFileSync(joinPath('.env'), 'FROM_DOTENV=dotenv\nSECRET_REF=hunter2-very-secret\0tail\n');
+
+		const env = await runAndReadEnv();
+
+		expect(env.FROM_DOTENV).toBe('dotenv');
+		expect(env.SECRET_REF).toBeNull();
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toContain(`Skipped 1 malformed line in ${joinPath('.env')} (line 2).`);
+		expect(stderr).not.toContain('hunter2');
+	});
+
 	it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
 		'stops before purging storage when .env cannot be read',
 		async () => {
