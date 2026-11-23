@@ -39,15 +39,20 @@ export interface EnvPlatformWrite {
 
 const notFound = (what: string) => Object.assign(new Error(`${what} was not found`), { statusCode: 404 });
 
-/** The API returns secrets without their value. */
-const publicEnvVar = ({ name, value, isSecret }: FakeEnvVar) =>
-	isSecret ? { name, isSecret: true } : { name, value, isSecret: false };
-
 export function createEnvPlatformMock() {
 	const state = {
 		user: { id: 'user-id', username: 'tester' },
 		actors: [] as FakeActor[],
+		/** Makes the fake API return secret values too, so a test can check that the CLI drops them. */
+		leakSecretValues: false,
 	};
+
+	/** The API returns secrets without their value. */
+	const publicEnvVar = ({ name, value, isSecret }: FakeEnvVar) => {
+		if (!isSecret) return { name, value, isSecret: false };
+		return state.leakSecretValues ? { name, value, isSecret: true } : { name, isSecret: true };
+	};
+
 	const writes: EnvPlatformWrite[] = [];
 	const pendingFailures: { method: WriteMethod; name: string; error: Error }[] = [];
 
@@ -150,6 +155,7 @@ export function createEnvPlatformMock() {
 		reset() {
 			state.user = { id: 'user-id', username: 'tester' };
 			state.actors = [];
+			state.leakSecretValues = false;
 			writes.length = 0;
 			pendingFailures.length = 0;
 		},

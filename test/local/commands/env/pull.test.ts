@@ -277,6 +277,37 @@ describe('apify env pull', () => {
 		expectNoSecretValues(instance);
 	});
 
+	it('keeps malformed .env lines and names them only by number', async () => {
+		writeDotEnvFile('PLAIN=old\nNO_EQUALS_SIGN\nBAD-NAME=bad-value\n');
+
+		await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_yes: true, flags_json: true });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(readDotEnvFile()).toBe(
+			`PLAIN='${PLAIN_VALUE}'\nNO_EQUALS_SIGN\nBAD-NAME=bad-value\nAPI_KEY=\nLOG_LEVEL=debug\n`,
+		);
+		expect(stderr()).toContain(
+			`Skipped 2 malformed lines in ${dotEnvPath()} (lines 2, 3). They stay in .env unchanged.`,
+		);
+		expect(`${stdout()}\n${stderr()}`).not.toMatch(/NO_EQUALS_SIGN|BAD-NAME|bad-value/);
+	});
+
+	it("skips platform variables whose name can't be in .env and names them", async () => {
+		envPlatform.state.actors[0].versions[0].envVars.push(
+			{ name: 'BAD-NAME', value: 'x', isSecret: false },
+			{ name: '1ABC', value: 'y', isSecret: true },
+		);
+
+		await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_json: true });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(readDotEnvFile()).toBe(`PLAIN='${PLAIN_VALUE}'\nAPI_KEY=\nLOG_LEVEL=debug\n`);
+		expect(stderr()).toContain(
+			"Skipped BAD-NAME, 1ABC: a name in .env can only have letters, digits, and underscores, and can't start with a digit.",
+		);
+		expect(JSON.parse(stdout())).toMatchObject({ added: ['API_KEY', 'LOG_LEVEL', 'PLAIN'], secretsEmpty: ['API_KEY'] });
+	});
+
 	it('fails before touching .gitignore when .env is a directory', async () => {
 		mkdirSync(join(actorDir, '.env', 'bin'), { recursive: true });
 
