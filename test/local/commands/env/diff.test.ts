@@ -30,7 +30,11 @@ const { logMessages } = useConsoleSpy();
 let actorDir: string;
 let originalExitCode: typeof process.exitCode;
 
-const writeDotEnv = (content: string) => writeFileSync(join(actorDir, '.env'), content);
+const writeDotEnv = (content: string, dir = actorDir) => writeFileSync(join(dir, '.env'), content);
+const writeActorJson = (dir: string, actorJson: Record<string, unknown>) => {
+	mkdirSync(join(dir, '.actor'), { recursive: true });
+	writeFileSync(join(dir, '.actor', 'actor.json'), JSON.stringify({ actorSpecification: 1, ...actorJson }));
+};
 const stdout = () => logMessages.log.join('\n');
 const stderr = () => logMessages.error.join('\n');
 
@@ -51,12 +55,12 @@ beforeEach(() => {
 					{ name: 'API_KEY', value: SECRET_VALUE, isSecret: true },
 				],
 			},
+			{ versionNumber: '0.1', envVars: [{ name: 'V01_ONLY', value: 'v01', isSecret: false }] },
 		],
 	});
 
 	actorDir = mkdtempSync(join(tmpdir(), 'env-diff-test-'));
-	mkdirSync(join(actorDir, '.actor'));
-	writeFileSync(join(actorDir, '.actor', 'actor.json'), JSON.stringify({ actorSpecification: 1, name: 'my-actor' }));
+	writeActorJson(actorDir, { name: 'my-actor' });
 });
 
 afterEach(() => {
@@ -182,6 +186,60 @@ describe('apify env diff', () => {
 			onlyOnPlatform: [],
 			valuesDiffer: [],
 		});
+	});
+
+	it('compares the version from actor.json', async () => {
+		writeActorJson(actorDir, { name: 'my-actor', version: '0.1' });
+		writeDotEnv('V01_ONLY=v01\n');
+
+		await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(stdout()).toBe('Success: .env and tester/my-actor version 0.1 are in sync.');
+	});
+
+	it('compares the version from --version', async () => {
+		writeDotEnv('V01_ONLY=v01\n');
+
+		await testRunCommand(EnvDiffCommand, { flags_dir: actorDir, flags_version: '0.1' });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(stdout()).toBe('Success: .env and tester/my-actor version 0.1 are in sync.');
+	});
+
+	it('reads .env from --dir with --actor and ignores the actor.json there', async () => {
+		const otherDir = join(actorDir, 'other');
+		writeActorJson(otherDir, { name: 'another-actor', version: '0.0' });
+		writeDotEnv('V01_ONLY=v01\n', otherDir);
+		writeDotEnv('NOT_READ=1\n');
+		vitest.spyOn(process, 'cwd').mockReturnValue(actorDir);
+
+		await testRunCommand(EnvDiffCommand, { flags_actor: 'tester/my-actor', flags_dir: otherDir, flags_version: '0.1' });
+
+		expect(process.exitCode).toBeUndefined();
+		expect(stdout()).toBe('Success: .env and tester/my-actor version 0.1 are in sync.');
+	});
+
+	it('resolves a relative --dir against the current directory', async () => {
+		const scraperDir = join(actorDir, 'actors', 'scraper');
+		writeActorJson(scraperDir, { name: 'my-actor' });
+		writeDotEnv(`PLAIN=${PLAIN_VALUE}\nAPI_KEY=\nIN_DIR=1\n`, scraperDir);
+		vitest.spyOn(process, 'cwd').mockReturnValue(actorDir);
+
+		await testRunCommand(EnvDiffCommand, { flags_dir: join('actors', 'scraper') });
+
+		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
+		expect(stdout()).toContain('  Only in .env:\n    + IN_DIR');
+	});
+
+	it('fails with exit code 250 when the version does not exist', async () => {
+		writeDotEnv(`PLAIN=${PLAIN_VALUE}\n`);
+
+		await testRunCommand(EnvDiffCommand, { flags_dir: actorDir, flags_version: '0.9' });
+
+		expect(process.exitCode).toBe(CommandExitCodes.NotFound);
+		expect(stderr()).toContain("Version 0.9 doesn't exist on Actor tester/my-actor. Its versions: 0.0, 0.1.");
+		expect(stdout()).toBe('');
 	});
 
 	// Secret material from unquoted multi-line values and a stray line: the parts before '=' must never be printed.
