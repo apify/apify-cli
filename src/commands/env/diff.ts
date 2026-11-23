@@ -1,5 +1,7 @@
 import process from 'node:process';
 
+import chalk from 'chalk';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import type { EnvVarComparisonStatus } from '../../lib/env-vars/diff.js';
@@ -83,10 +85,14 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 			return;
 		}
 
-		const lines = [`.env and ${describeTarget(target)} differ:`];
-		if (onlyInDotEnv.length) lines.push(`  Only in .env: ${onlyInDotEnv.join(', ')}`);
-		if (onlyOnPlatform.length) lines.push(`  Only on the platform: ${onlyOnPlatform.join(', ')}`);
-		if (valuesDiffer.length) lines.push(`  Different values: ${valuesDiffer.join(', ')}`);
-		simpleLog({ message: lines.join('\n'), stdout: true });
+		const sections = [
+			{ title: 'Only in .env:', names: onlyInDotEnv, mark: chalk.green('+') },
+			{ title: 'Only on the platform:', names: onlyOnPlatform, mark: chalk.red('-') },
+			{ title: 'Different values:', names: valuesDiffer, mark: chalk.yellow('~') },
+		]
+			.filter(({ names }) => names.length)
+			.flatMap(({ title, names, mark }) => [`  ${title}`, ...names.map((name) => `    ${mark} ${name}`)]);
+
+		simpleLog({ message: [`.env and ${describeTarget(target)} differ:`, ...sections].join('\n'), stdout: true });
 	}
 }

@@ -100,7 +100,7 @@ describe('apify env diff', () => {
 
 		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
 		expect(stdout()).toContain('.env and tester/my-actor version 0.0 differ:');
-		expect(stdout()).toContain('Only in .env: NEW_A, NEW_B');
+		expect(stdout()).toContain('  Only in .env:\n    + NEW_A\n    + NEW_B');
 		expect(stdout()).not.toContain('Only on the platform');
 		expect(stdout()).not.toContain('Different values');
 		expectNoValues(instance);
@@ -112,7 +112,7 @@ describe('apify env diff', () => {
 		const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
 
 		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
-		expect(stdout()).toContain('Only on the platform: API_KEY');
+		expect(stdout()).toContain('  Only on the platform:\n    - API_KEY');
 		expect(stdout()).not.toContain('Only in .env');
 		expect(stdout()).not.toContain('Different values');
 		expectNoValues(instance);
@@ -124,8 +124,28 @@ describe('apify env diff', () => {
 		const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
 
 		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
-		expect(stdout()).toContain('Different values: PLAIN');
+		expect(stdout()).toContain('  Different values:\n    ~ PLAIN');
 		expect(stdout()).not.toContain('Only');
+		expectNoValues(instance);
+	});
+
+	it('lists every kind of difference with one name per line', async () => {
+		writeDotEnv(`PLAIN=${LOCAL_PLAIN_VALUE}\nNEW_VAR=${LOCAL_SECRET_VALUE}\n`);
+
+		const instance = await testRunCommand(EnvDiffCommand, { flags_dir: actorDir });
+
+		expect(process.exitCode).toBe(CommandExitCodes.EnvDiffFound);
+		expect(stdout()).toBe(
+			[
+				'.env and tester/my-actor version 0.0 differ:',
+				'  Only in .env:',
+				'    + NEW_VAR',
+				'  Only on the platform:',
+				'    - API_KEY',
+				'  Different values:',
+				'    ~ PLAIN',
+			].join('\n'),
+		);
 		expectNoValues(instance);
 	});
 
