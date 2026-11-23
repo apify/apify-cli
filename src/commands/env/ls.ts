@@ -58,6 +58,7 @@ export class EnvLsCommand extends ApifyCommand<typeof EnvLsCommand> {
 			return;
 		}
 
+		info({ message: `Env vars on ${describeTarget(target)}:` });
 		simpleLog({ message: renderEnvVarTable(envVars), stdout: true });
 	}
 }

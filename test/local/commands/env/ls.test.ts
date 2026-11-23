@@ -71,9 +71,15 @@ describe('apify env ls', () => {
 		expect(output).toMatch(/LOG_LEVEL.*plain.*debug/);
 		expect(output).toMatch(/API_KEY.*secret.*hidden/);
 		expect(output.indexOf('LOG_LEVEL')).toBeLessThan(output.indexOf('API_KEY'));
-		expect(logMessages.error).toEqual([]);
 		expect(process.exitCode).toBeUndefined();
 		expectNoSecretValue(instance);
+	});
+
+	it('names the Actor and version on stderr, so stdout holds only the table', async () => {
+		await testRunCommand(EnvLsCommand, { flags_dir: actorDir });
+
+		expect(logMessages.error.join('\n')).toContain('Env vars on tester/my-actor version 0.0:');
+		expect(logMessages.log.join('\n')).not.toContain('Env vars on');
 	});
 
 	it('prints JSON with --json', async () => {
