@@ -268,24 +268,26 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Manage locally stored secrets that '.actor/actor.json' environment variables 
-  reference with the "@" prefix (e.g. "@mySecret") for local runs. To set 
-  secrets on the platform, use apify env set --secret.
+  Deprecated: use .env and apify env instead. Manage locally stored secrets that
+   '.actor/actor.json' environment variables reference with the "@" prefix (e.g.
+   "@mySecret") for local runs. To set secrets on the platform, use apify env 
+  set --secret.
 
 SUBCOMMANDS
-  secrets add  Adds a new secret to '~/.apify' for use in Actor
-               environment variables.
-  secrets ls   Lists all secret keys stored in your local
-               configuration.
-  secrets rm   Permanently deletes a secret from your stored
-               credentials.
+  secrets add  Deprecated: use .env and apify env instead. Adds a new
+               secret to '~/.apify' for use in Actor environment variables.
+  secrets ls   Deprecated: use .env and apify env instead. Lists all
+               secret keys stored in your local configuration.
+  secrets rm   Deprecated: use .env and apify env instead.
+               Permanently deletes a secret from your stored credentials.
 ```
 
 ##### `apify secrets add`
 
 ```sh
 DESCRIPTION
-  Adds a new secret to '~/.apify' for use in Actor environment variables.
+  Deprecated: use .env and apify env instead. Adds a new secret to '~/.apify' 
+  for use in Actor environment variables.
 
 USAGE
   $ apify secrets add <name> <value>
@@ -299,7 +301,8 @@ ARGUMENTS
 
 ```sh
 DESCRIPTION
-  Lists all secret keys stored in your local configuration.
+  Deprecated: use .env and apify env instead. Lists all secret keys stored in 
+  your local configuration.
 
 USAGE
   $ apify secrets ls [--json]
@@ -312,7 +315,8 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Permanently deletes a secret from your stored credentials.
+  Deprecated: use .env and apify env instead. Permanently deletes a secret from 
+  your stored credentials.
 
 USAGE
   $ apify secrets rm <name>

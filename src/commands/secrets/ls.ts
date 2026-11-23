@@ -2,6 +2,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
+import { warnDeprecated } from '../../lib/env-vars/deprecations.js';
 import { info, simpleLog } from '../../lib/outputs.js';
 import { getSecretsFile } from '../../lib/secrets.js';
 import { printJsonToStdout } from '../../lib/utils.js';
@@ -17,7 +18,8 @@ const table = new ResponsiveTable({
 export class SecretsLsCommand extends ApifyCommand<typeof SecretsLsCommand> {
 	static override name = 'ls' as const;
 
-	static override description = 'Lists all secret keys stored in your local configuration.';
+	static override description =
+		'Deprecated: use .env and apify env instead. Lists all secret keys stored in your local configuration.';
 
 	static override examples = [
 		{
@@ -31,6 +33,8 @@ export class SecretsLsCommand extends ApifyCommand<typeof SecretsLsCommand> {
 	static override enableJsonFlag = true;
 
 	async run() {
+		warnDeprecated('secretsCommand', this.telemetryData);
+
 		const { json } = this.flags;
 
 		const secrets = getSecretsFile();

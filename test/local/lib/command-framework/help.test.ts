@@ -2,6 +2,8 @@
 import stripAnsi from 'strip-ansi';
 
 import { RuntimeIndexCommand } from '../../../../src/commands/runtime/_index.js';
+import { SecretsIndexCommand } from '../../../../src/commands/secrets/_index.js';
+import { SecretsAddCommand } from '../../../../src/commands/secrets/add.js';
 import {
 	ApifyCommand,
 	type BuiltApifyCommand as _BuiltApifyCommand,
@@ -108,6 +110,7 @@ describe('Help rendering', () => {
 		registerCommandForHelpGeneration('apify', FakeUtility);
 		registerCommandForHelpGeneration('apify', FakeInteractiveNamespace);
 		registerCommandForHelpGeneration('apify', RuntimeIndexCommand);
+		registerCommandForHelpGeneration('apify', SecretsIndexCommand);
 
 		// The `actor push-data` subcommand is registered twice with different entrypoints,
 		// once as a subcommand of `apify actor` and once as a standalone `actor` command.
@@ -195,6 +198,31 @@ describe('Help rendering', () => {
 
 			for (const subcommand of RuntimeIndexCommand.subcommands!) {
 				expect(stripAnsi(renderHelpForCommand(subcommand)).startsWith('[EXPERIMENTAL] ')).toBe(true);
+			}
+		});
+	});
+
+	describe('apify secrets help', () => {
+		it('is labelled deprecated, in its own help, its subcommands, and the main menu', () => {
+			expect(stripAnsi(renderHelpForCommand(SecretsIndexCommand)).startsWith('[DEPRECATED] Deprecated: use .env')).toBe(
+				true,
+			);
+			expect(stripAnsi(renderHelpForCommand(SecretsAddCommand)).startsWith('[DEPRECATED] ')).toBe(true);
+			expect(stripAnsi(renderMainHelpMenu('apify'))).toMatch(/secrets\s+\[DEPRECATED\] Deprecated: use \.env/);
+
+			for (const subcommand of SecretsIndexCommand.subcommands!) {
+				expect(stripAnsi(renderHelpForCommand(subcommand)).startsWith('[DEPRECATED] Deprecated: ')).toBe(true);
+			}
+		});
+
+		it('labels every subcommand deprecated in the SUBCOMMANDS list through its description', () => {
+			const subcommandLines = stripAnsi(renderHelpForCommand(SecretsIndexCommand))
+				.split('\n')
+				.filter((line) => /^\s+secrets (add|ls|rm)\s/.test(line));
+
+			expect(subcommandLines).toHaveLength(3);
+			for (const line of subcommandLines) {
+				expect(line).toContain('Deprecated: use .env and apify env instead.');
 			}
 		});
 	});

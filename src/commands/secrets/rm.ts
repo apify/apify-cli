@@ -1,11 +1,13 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { warnDeprecated } from '../../lib/env-vars/deprecations.js';
 import { removeSecret } from '../../lib/secrets.js';
 
 export class SecretsRmCommand extends ApifyCommand<typeof SecretsRmCommand> {
 	static override name = 'rm' as const;
 
-	static override description = 'Permanently deletes a secret from your stored credentials.';
+	static override description =
+		'Deprecated: use .env and apify env instead. Permanently deletes a secret from your stored credentials.';
 
 	static override examples = [
 		{
@@ -24,6 +26,8 @@ export class SecretsRmCommand extends ApifyCommand<typeof SecretsRmCommand> {
 	};
 
 	async run() {
+		warnDeprecated('secretsCommand', this.telemetryData);
+
 		const { name } = this.args;
 
 		removeSecret(name);

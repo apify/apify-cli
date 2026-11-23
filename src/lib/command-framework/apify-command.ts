@@ -249,6 +249,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	/** Labels the command [EXPERIMENTAL] in help: it may change in any release. */
 	static experimental?: boolean;
 
+	/** Labels the command [DEPRECATED] in help: it will be removed in a future major version. */
+	static deprecated?: boolean;
+
 	/**
 	 * Grouping label shown in the main help menu. Commands are grouped by this value
 	 * and rendered as separate sections. Commands without a group fall into "OTHER".

@@ -8,6 +8,7 @@ import { error } from '../outputs.js';
 import type { BuiltApifyCommand } from './apify-command.js';
 import {
 	type BaseCommandRenderer,
+	deprecatedLabel,
 	experimentalLabel,
 	type SelectiveRenderOptions,
 } from './help/_BaseCommandRenderer.js';
@@ -30,8 +31,9 @@ export function registerCommandForHelpGeneration(entrypoint: string, command: ty
 		commands.set(command, new CommandWithSubcommandsHelp(entrypoint, command));
 
 		for (const subcommand of command.subcommands) {
-			// An experimental namespace makes its subcommands experimental too.
+			// An experimental or deprecated namespace labels its subcommands the same way.
 			subcommand.experimental ??= command.experimental;
+			subcommand.deprecated ??= command.deprecated;
 			registerCommandForHelpGeneration(`${entrypoint} ${command.name}`, subcommand);
 		}
 	} else {
@@ -162,7 +164,7 @@ export function renderMainHelpMenu(entrypoint: string) {
 	const renderEntry = ([command]: [typeof BuiltApifyCommand, BaseCommandRenderer]): string => {
 		const shortDescription = command.shortDescription || command.description?.split('\n')[0] || '';
 		const label = command.name.padEnd(widestNameLength);
-		const fullString = `${label}  ${experimentalLabel(command)}${shortDescription}`;
+		const fullString = `${label}  ${deprecatedLabel(command)}${experimentalLabel(command)}${shortDescription}`;
 		// -4 = 2 leading spaces on the line + 2 spaces between label and description
 		const wrapped = wrapAnsi(fullString, getMaxLineWidth() - widestNameLength - 4);
 		// Indent so continuation lines line up under the description column (label + 2-space separator + 2 leading)
