@@ -55,13 +55,19 @@ export function parseDotEnv(content: string): Pick<DotEnvFile, 'vars' | 'malform
 		if (QUOTES.includes(quote)) {
 			// A quoted value runs to the closing quote, also on a later line, and the rest of that line is ignored.
 			// Without a closing quote, the value is the rest of the line, quote included.
-			const rest = [raw.slice(1), ...lines.slice(i + 1)].join('\n');
-			const end = rest.indexOf(quote);
+			const valueLines = [raw.slice(1)];
+			let end = valueLines[0].indexOf(quote);
+			for (let next = i + 1; end === -1 && next < lines.length; next++) {
+				valueLines.push(lines[next]);
+				end = lines[next].indexOf(quote);
+			}
 			if (end === -1) {
 				value = trimSpaces(raw);
 			} else {
-				value = rest.slice(0, end);
-				i += value.split('\n').length - 1;
+				const last = valueLines.length - 1;
+				valueLines[last] = valueLines[last].slice(0, end);
+				value = valueLines.join('\n');
+				i += valueLines.length - 1;
 				if (quote === '"') value = value.replaceAll('\\n', '\n');
 			}
 		}
@@ -82,6 +88,22 @@ export function describeMalformedLines({
 
 	const lines = malformedLines.length === 1 ? 'line' : 'lines';
 	return `Skipped ${malformedLines.length} malformed ${lines} in ${path} (${lines} ${malformedLines.join(', ')}).`;
+}
+
+/**
+ * Fails with exit code 5 when .env has malformed lines, and names them by number only. The lines of an unquoted
+ * multi-line value can read as `NAME=value`, so a command that sends or prints the names stops instead of skipping them.
+ */
+export function failOnMalformedLines(
+	{ path, malformedLines }: Pick<DotEnvFile, 'path' | 'malformedLines'>,
+	action: string,
+): void {
+	if (!malformedLines.length) return;
+
+	const lines = malformedLines.length === 1 ? `line ${malformedLines[0]} is` : `lines ${malformedLines.join(', ')} are`;
+	envFail(
+		`Can't ${action} ${path}: ${lines} malformed. Quote values that span several lines, and fix or remove the other lines.`,
+	);
 }
 
 export function getDotEnvPath(actorDir: string): string {

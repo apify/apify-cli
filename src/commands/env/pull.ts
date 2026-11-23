@@ -6,13 +6,12 @@ import {
 	checkDotEnvWritable,
 	describeMalformedLines,
 	ensureDotEnvGitignored,
-	isValidDotEnvName,
 	readDotEnv,
 	updateDotEnvContent,
 	writeDotEnv,
 } from '../../lib/env-vars/dotenv.js';
 import { envTargetFlags } from '../../lib/env-vars/flags.js';
-import { describeTarget, targetJson } from '../../lib/env-vars/output.js';
+import { describeTarget, skipInvalidDotEnvNames, targetJson } from '../../lib/env-vars/output.js';
 import { listPlatformEnvVars } from '../../lib/env-vars/platform.js';
 import { resolveEnvTarget } from '../../lib/env-vars/target.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
@@ -72,14 +71,7 @@ export class EnvPullCommand extends ApifyCommand<typeof EnvPullCommand> {
 		const keptLocal: string[] = [];
 		const secretsEmpty: string[] = [];
 
-		const invalidNames = platform.filter(({ name }) => !isValidDotEnvName(name)).map(({ name }) => name);
-		if (invalidNames.length) {
-			warning({
-				message: `Skipped ${invalidNames.join(', ')}: a name in .env can only have letters, digits, and underscores, and can't start with a digit.`,
-			});
-		}
-
-		for (const { name, isSecret, value = '' } of platform.filter((envVar) => isValidDotEnvName(envVar.name))) {
+		for (const { name, isSecret, value = '' } of skipInvalidDotEnvNames(platform)) {
 			const isLocal = Object.hasOwn(dotEnv.vars, name);
 			if (isSecret) {
 				if (isLocal) {

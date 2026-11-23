@@ -308,6 +308,19 @@ describe('apify env pull', () => {
 		expect(JSON.parse(stdout())).toMatchObject({ added: ['API_KEY', 'LOG_LEVEL', 'PLAIN'], secretsEmpty: ['API_KEY'] });
 	});
 
+	it('escapes control characters in the names it skips', async () => {
+		envPlatform.state.actors[0].versions[0].envVars.push({
+			name: 'X\u001b]52;c;cHduZWQ=\u0007',
+			value: 'x',
+			isSecret: false,
+		});
+
+		await testRunCommand(EnvPullCommand, { flags_dir: actorDir, flags_yes: true });
+
+		expect(stderr()).toContain('Skipped X\\x1b]52;c;cHduZWQ=\\x07: a name in .env can only have');
+		for (const raw of ['\u001b]52', '\u0007']) expect(`${stdout()}\n${stderr()}`).not.toContain(raw);
+	});
+
 	it('fails before touching .gitignore when .env is a directory', async () => {
 		mkdirSync(join(actorDir, '.env', 'bin'), { recursive: true });
 

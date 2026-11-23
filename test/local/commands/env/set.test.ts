@@ -214,6 +214,14 @@ describe('apify env set', () => {
 		expect(logMessages.error.join('\n')).not.toContain(SECRET_VALUE);
 	});
 
+	it('escapes control characters in the name it prints', async () => {
+		await testRunCommand(EnvSetCommand, { args_name: 'CLEAR\u001b[2J', flags_dir: actorDir });
+
+		expect(envVarsOnPlatform()).toContainEqual({ name: 'CLEAR\u001b[2J', value: SECRET_VALUE, isSecret: false });
+		expect(logMessages.log.join('\n')).toContain('Created CLEAR\\x1b[2J on tester/my-actor version 0.0.');
+		expect(`${logMessages.log.join('\n')}\n${logMessages.error.join('\n')}`).not.toContain('\u001b[2J');
+	});
+
 	it('reports an API failure with exit code 1 and without the value', async () => {
 		envPlatform.failNext('create', 'NEW_VAR', new Error('Request failed'));
 
