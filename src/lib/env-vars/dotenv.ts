@@ -19,6 +19,9 @@ export interface DotEnvFile {
 
 // Setting __proto__ on an object does nothing, so the vars could never hold it.
 const VALID_NAME = /^(?!__proto__$)[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Whether a variable with this name can be in .env: only letters, digits, and underscores, not starting with a digit. */
+export const isValidDotEnvName = (name: string) => VALID_NAME.test(name);
 const QUOTES = ['"', "'", '`'];
 
 const isSpace = (char: string) => char === ' ' || char === '\t';
@@ -98,6 +101,22 @@ export function describeMalformedLines({
 
 	const lines = malformedLines.length === 1 ? 'line' : 'lines';
 	return `Skipped ${malformedLines.length} malformed ${lines} in ${path} (${lines} ${malformedLines.join(', ')}).`;
+}
+
+/**
+ * Fails with exit code 5 when .env has malformed lines, and names them by number only. The lines of an unquoted
+ * multi-line value can read as `NAME=value`, so a command that sends or prints the names stops instead of skipping them.
+ */
+export function failOnMalformedLines(
+	{ path, malformedLines }: Pick<DotEnvFile, 'path' | 'malformedLines'>,
+	action: string,
+): void {
+	if (!malformedLines.length) return;
+
+	const lines = malformedLines.length === 1 ? `line ${malformedLines[0]} is` : `lines ${malformedLines.join(', ')} are`;
+	envFail(
+		`Can't ${action} ${path}: ${lines} malformed. Quote values that span several lines, and fix or remove the other lines.`,
+	);
 }
 
 export function getDotEnvPath(actorDir: string): string {

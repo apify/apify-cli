@@ -1257,12 +1257,16 @@ DESCRIPTION
   runs see them.
 
 SUBCOMMANDS
-  env ls   Lists the env vars of an Actor version on the Apify platform.
-           Secret values stay hidden.
-  env set  Creates an env var on an Actor version, or updates it when it
-           exists. The value comes from a prompt or standard input, never from an
-           argument, so it stays out of shell history.
-  env rm   Deletes an env var from an Actor version.
+  env ls    Lists the env vars of an Actor version on the Apify
+            platform. Secret values stay hidden.
+  env set   Creates an env var on an Actor version, or updates it when
+            it exists. The value comes from a prompt or standard input, never from
+            an argument, so it stays out of shell history.
+  env rm    Deletes an env var from an Actor version.
+  env push  Uploads .env to an Actor version. Shows the changes and asks
+            before it makes them. Adds and updates variables; --prune also deletes
+            the ones that aren't in .env. New variables are secrets unless --plain
+            is passed. Keys with an empty value are skipped.
 ```
 
 ##### `apify env ls`
@@ -1343,6 +1347,37 @@ FLAGS
       --json             Format the command output as JSON.
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
+  -v, --version=<value>  Actor version. Defaults to "version"
+                         in '.actor/actor.json', then to 0.0.
+  -y, --yes              Answer "yes" to all prompts.
+```
+
+##### `apify env push`
+
+```sh
+DESCRIPTION
+  Uploads .env to an Actor version. Shows the changes and asks before it makes 
+  them. Adds and updates variables; --prune also deletes the ones that aren't in
+   .env. New variables are secrets unless --plain is passed. Keys with an empty 
+  value are skipped.
+
+USAGE
+  $ apify env push [--actor <value>] [--dir <value>] [--json]
+                   [--plain] [--profile <value>] [--prune] [-v <value>] [-y]
+
+FLAGS
+      --actor=<value>    ID or "username/name" of the Actor. Use
+                         it to target an Actor without a local project.
+      --dir=<value>      Directory of the Actor and its .env
+                         file. Use it to pick an Actor folder in a monorepo.
+                         Defaults to the current directory.
+      --json             Format the command output as JSON.
+      --plain            Create new variables as plain text
+                         instead of secrets. Existing variables keep their type.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+      --prune            Also delete variables on the platform
+                         that aren't in .env.
   -v, --version=<value>  Actor version. Defaults to "version"
                          in '.actor/actor.json', then to 0.0.
   -y, --yes              Answer "yes" to all prompts.

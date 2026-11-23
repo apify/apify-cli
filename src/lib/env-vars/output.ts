@@ -1,7 +1,10 @@
 import chalk from 'chalk';
 
 import { CompactMode, ResponsiveTable } from '../commands/responsive-table.js';
-import { info } from '../outputs.js';
+import { info, warning } from '../outputs.js';
+import type { EnvPushAction, EnvPushStep } from './diff.js';
+import { envPushWrites } from './diff.js';
+import { isValidDotEnvName } from './dotenv.js';
 import type { PlatformEnvVar } from './platform.js';
 import type { EnvTarget } from './target.js';
 
@@ -27,6 +30,18 @@ const escapeControlChars = (text: string, { keepNewline = true } = {}) =>
 /** A name to print in a message: every control character is escaped, newlines too, so it can't print extra lines. */
 export const escapeName = (name: string) => escapeControlChars(name, { keepNewline: false });
 
+/** Leaves out the platform variables whose names .env can't hold, such as `BAD-NAME`, and names them in a warning. */
+export function skipInvalidDotEnvNames(envVars: PlatformEnvVar[]): PlatformEnvVar[] {
+	const skipped = envVars.filter(({ name }) => !isValidDotEnvName(name)).map(({ name }) => escapeName(name));
+	if (skipped.length) {
+		warning({
+			message: `Skipped ${skipped.join(', ')}: a name in .env can only have letters, digits, and underscores, and can't start with a digit.`,
+		});
+	}
+
+	return envVars.filter(({ name }) => isValidDotEnvName(name));
+}
+
 /** A table of names, types, and plain values. A secret's value is never shown. */
 export function renderEnvVarTable(envVars: PlatformEnvVar[]): string {
 	const table = new ResponsiveTable({
@@ -50,4 +65,34 @@ export function printRebuildReminder(target: EnvTarget): void {
 	info({
 		message: `Runs use the env vars copied onto a build. Rebuild the Actor before runs see the change: apify builds create ${target.actorLabel} --version ${target.versionNumber}`,
 	});
+}
+
+const PLAN_LINES: Partial<Record<EnvPushAction, (step: EnvPushStep) => string>> = {
+	'add': ({ name, isSecret }) => chalk.green(`+ ${name}${isSecret ? ' (secret)' : ''}`),
+	'update': ({ name }) => chalk.yellow(`~ ${name}`),
+	'replace-secret': ({ name }) => chalk.yellow(`~ ${name} (secret, replaced: secret values can't be compared)`),
+	'remove': ({ name, isSecret }) => chalk.red(`- ${name}${isSecret ? ' (secret)' : ''}`),
+};
+
+/** The `apify env push` plan: names and types only, never values. */
+export function renderEnvPushPlan(target: EnvTarget, steps: EnvPushStep[]): string {
+	const writes = envPushWrites(steps);
+	const namesWith = (action: EnvPushAction) =>
+		steps
+			.filter((step) => step.action === action)
+			.map(({ name }) => name)
+			.join(', ');
+
+	const lines = writes.length
+		? [`Changes to ${describeTarget(target)}:`, ...writes.map((step) => `  ${PLAN_LINES[step.action]!(step)}`)]
+		: [`No changes to ${describeTarget(target)}.`];
+
+	const unchanged = namesWith('unchanged');
+	const skipped = namesWith('skip-empty');
+	const kept = namesWith('keep');
+	if (unchanged) lines.push(`Unchanged: ${unchanged}`);
+	if (skipped) lines.push(`Skipped, empty in .env: ${skipped}`);
+	if (kept) lines.push(`Only on the platform, kept: ${kept}. Pass --prune to delete.`);
+
+	return lines.join('\n');
 }
