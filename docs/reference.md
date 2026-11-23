@@ -1273,7 +1273,8 @@ SUBCOMMANDS
             secrets and of keys that exist only locally.
   env diff  Compares .env with the env vars of an Actor version. Exits
             with 0 when they're in sync and with 1 on any difference, so it fits
-            pre-commit hooks and CI. Secrets are compared by name only.
+            pre-commit hooks and CI. Secrets are compared by name only. Values are
+            never printed.
 ```
 
 ##### `apify env ls`
@@ -1423,7 +1424,7 @@ FLAGS
 DESCRIPTION
   Compares .env with the env vars of an Actor version. Exits with 0 when they're
    in sync and with 1 on any difference, so it fits pre-commit hooks and CI. 
-  Secrets are compared by name only.
+  Secrets are compared by name only. Values are never printed.
 
 USAGE
   $ apify env diff [--actor <value>] [--dir <value>] [--json]

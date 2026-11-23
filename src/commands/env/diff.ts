@@ -19,7 +19,7 @@ export class EnvDiffCommand extends ApifyCommand<typeof EnvDiffCommand> {
 	static override name = 'diff' as const;
 
 	static override description =
-		"Compares .env with the env vars of an Actor version. Exits with 0 when they're in sync and with 1 on any difference, so it fits pre-commit hooks and CI. Secrets are compared by name only.";
+		"Compares .env with the env vars of an Actor version. Exits with 0 when they're in sync and with 1 on any difference, so it fits pre-commit hooks and CI. Secrets are compared by name only. Values are never printed.";
 
 	static override examples = [
 		{
