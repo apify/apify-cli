@@ -1,5 +1,5 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
-import { ACTOR_RUNTIME_API_URL, ACTOR_RUNTIME_GUIDE_URL, RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/runtime/docker.js';
+import { ACTOR_RUNTIME_API_URL, RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/runtime/docker.js';
 import { RuntimeConnectCommand } from './connect.js';
 import { RuntimeDisconnectCommand } from './disconnect.js';
 import { RuntimeInstallCommand } from './install.js';
@@ -13,7 +13,7 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 
 	static override description = [
 		'Manages the Actor runtime, a self-contained local Apify platform running as a container on Docker or Podman.',
-		`For setup and usage, see ${ACTOR_RUNTIME_GUIDE_URL}.`,
+		'For setup and usage, see https://docs.apify.com/actors/development/test-and-debug/actor-runtime.',
 		'',
 		RUNTIME_EXPERIMENTAL_NOTE,
 	].join('\n');
