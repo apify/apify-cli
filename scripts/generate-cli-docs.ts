@@ -15,10 +15,6 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.authSwitch },
 		{ command: Commands.authToken },
 		{ command: Commands.info },
-		{ command: Commands.secrets },
-		{ command: Commands.secretsAdd },
-		{ command: Commands.secretsLs },
-		{ command: Commands.secretsRm },
 	],
 	'actor-dev': [
 		//

@@ -23,9 +23,8 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
-import { warnDeprecated } from '../lib/env-vars/deprecations.js';
 import { describeMalformedLines, readDotEnv } from '../lib/env-vars/dotenv.js';
-import { hasLegacyEnvVars } from '../lib/env-vars/legacy.js';
+import { assertNoLegacyEnvVars } from '../lib/env-vars/legacy.js';
 import { execWithLog } from '../lib/exec.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
@@ -35,7 +34,6 @@ import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '..
 import { deleteKvsRecord, writeKvsRecord } from '../lib/kvs-metadata.js';
 import { getAccessToken, OAuthSessionError } from '../lib/oauth/session.js';
 import { error, info, warning } from '../lib/outputs.js';
-import { replaceSecretsValue } from '../lib/secrets.js';
 import { DEFAULT_LOCAL_SERVER_PORT, watchLocalServerReadiness } from '../lib/server-actor.js';
 import type { AuthJSON } from '../lib/types.js';
 import {
@@ -184,11 +182,6 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
 		}),
-		'allow-missing-secrets': Flags.boolean({
-			description: 'Allow the command to continue even when secret values are not found in the local secrets storage.',
-			required: false,
-			default: false,
-		}),
 		server: Flags.boolean({
 			aliases: ['standby'],
 			description:
@@ -236,7 +229,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const { config: localConfig } = localConfigResult.unwrap();
 
-		if (hasLegacyEnvVars(localConfig)) warnDeprecated('environmentVariables', this.telemetryData);
+		assertNoLegacyEnvVars(localConfig);
 
 		// Read .env before purging storage or writing input, so an unreadable file stops the run with nothing changed.
 		const dotEnv = readDotEnv(cwd);
@@ -436,13 +429,6 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
 		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
-		if (localConfig!.environmentVariables) {
-			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>, undefined, {
-				allowMissing: this.flags.allowMissingSecrets,
-			});
-			Object.assign(localEnvVars, updatedEnv);
-		}
-
 		Object.assign(localEnvVars, dotEnvVars);
 
 		// localEnvVars must take priority so the CLI can redirect the SDK to temp input files

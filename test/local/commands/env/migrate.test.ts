@@ -139,7 +139,7 @@ describe('apify env migrate', () => {
 
 		expect(process.exitCode).toBe(5);
 		expect(stderr()).toContain(
-			"These secrets aren't in the local secrets store: another, token. Add them with apify secrets add, or pass --allow-missing-secrets to write their keys empty.",
+			"These secrets aren't in the local secrets store: another, token. Pass --allow-missing-secrets to write their keys empty, then fill in their values in .env.",
 		);
 		expect(yesNoConfirm).not.toHaveBeenCalled();
 		expect(existsSync(dotEnvPath())).toBe(false);

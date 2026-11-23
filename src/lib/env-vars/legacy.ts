@@ -1,3 +1,6 @@
+import { CommandExitCodes } from '../consts.js';
+import { envFail } from './errors.js';
+
 /** A string value that refers to a secret in the local secrets store: `@` and the secret's name. */
 export const SECRET_REF_PATTERN = /^@.+/;
 
@@ -17,4 +20,14 @@ export function countLegacyEnvVars(environmentVariables: unknown): { envVarsCoun
 /** True when actor.json has a non-empty environmentVariables object. */
 export function hasLegacyEnvVars(config: Record<string, unknown> | undefined): boolean {
 	return countLegacyEnvVars(config?.environmentVariables).envVarsCount > 0;
+}
+
+/** Fails with exit code 5 when actor.json has a non-empty environmentVariables object. An empty one is ignored. */
+export function assertNoLegacyEnvVars(config: Record<string, unknown> | undefined): void {
+	if (hasLegacyEnvVars(config)) {
+		envFail(
+			'"environmentVariables" in .actor/actor.json is no longer supported. Run apify env migrate to move the values to .env.',
+			CommandExitCodes.InvalidActorJson,
+		);
+	}
 }

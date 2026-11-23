@@ -1,3 +1,21 @@
+# Migration to 2.0.0
+
+## Breaking change: environmentVariables, @secret references, and apify secrets are removed
+
+`environmentVariables` in `.actor/actor.json`, `@secret` references, and the `apify secrets` commands were deprecated in 1.x. They're removed now:
+
+- `apify run` no longer reads `environmentVariables`. When `.actor/actor.json` has a non-empty `environmentVariables`, `apify run` and `apify push` stop with exit code 5 and this error: `"environmentVariables" in .actor/actor.json is no longer supported. Run apify env migrate to move the values to .env.` An empty `"environmentVariables": {}`, which older `apify init` versions wrote, is ignored.
+- `apify secrets add`, `apify secrets ls`, and `apify secrets rm` are removed. `@name` values aren't resolved anymore; in `.env` they're literal values.
+- `--allow-missing-secrets` is removed from `apify run` and `apify push`. Passing it fails as an unknown flag.
+
+To upgrade a project:
+
+1. Run `apify env migrate`. It moves `environmentVariables` into a `.env` file next to the `.actor` folder, resolves `@secret` references from `~/.apify/secrets.json` (which `apify secrets add` wrote), adds `.env` to `.gitignore`, and removes the block from `.actor/actor.json`. `apify env migrate` keeps its own `--allow-missing-secrets` flag, which writes the keys of missing secrets with an empty value.
+1. If the platform needs the same values, run `apify env push`. Since 1.14.0, `apify push` doesn't set env vars on the platform.
+1. Remove `--allow-missing-secrets` from scripts that call `apify run` or `apify push`.
+
+`~/.apify/secrets.json` isn't deleted. Remove it when you don't need it anymore.
+
 # Migration from 1.13.x to 1.14.0
 
 ## Breaking change: apify push no longer uploads environmentVariables

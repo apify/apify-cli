@@ -263,67 +263,6 @@ FLAGS
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
 ```
-
-##### `apify secrets`
-
-```sh
-DESCRIPTION
-  Deprecated: use .env and apify env instead. Manage locally stored secrets that
-   '.actor/actor.json' environment variables reference with the "@" prefix (e.g.
-   "@mySecret") for local runs. To set secrets on the platform, use apify env 
-  set --secret.
-
-SUBCOMMANDS
-  secrets add  Deprecated: use .env and apify env instead. Adds a new
-               secret to '~/.apify' for use in Actor environment variables.
-  secrets ls   Deprecated: use .env and apify env instead. Lists all
-               secret keys stored in your local configuration.
-  secrets rm   Deprecated: use .env and apify env instead.
-               Permanently deletes a secret from your stored credentials.
-```
-
-##### `apify secrets add`
-
-```sh
-DESCRIPTION
-  Deprecated: use .env and apify env instead. Adds a new secret to '~/.apify' 
-  for use in Actor environment variables.
-
-USAGE
-  $ apify secrets add <name> <value>
-
-ARGUMENTS
-  name   Name of the secret.
-  value  Value of the secret.
-```
-
-##### `apify secrets ls`
-
-```sh
-DESCRIPTION
-  Deprecated: use .env and apify env instead. Lists all secret keys stored in 
-  your local configuration.
-
-USAGE
-  $ apify secrets ls [--json]
-
-FLAGS
-      --json  Format the command output as JSON.
-```
-
-##### `apify secrets rm`
-
-```sh
-DESCRIPTION
-  Deprecated: use .env and apify env instead. Permanently deletes a secret from 
-  your stored credentials.
-
-USAGE
-  $ apify secrets rm <name>
-
-ARGUMENTS
-  name  Name of the secret.
-```
 <!-- auth-commands-end -->
 <!-- prettier-ignore-end -->
 
@@ -471,49 +410,41 @@ DESCRIPTION
   in package.json file.
 
 USAGE
-  $ apify run [--allow-missing-secrets] [--entrypoint <value>]
+  $ apify run [--entrypoint <value>]
               [-i <value> | --input-file <value>] [--port <value>]
               [--profile <value>] [-p | --resurrect] [--server]
 
 FLAGS
-      --allow-missing-secrets  Allow the command to
-                               continue even when secret values are not found in the
-                               local secrets storage.
-      --entrypoint=<value>     Optional entrypoint for
-                               running with injected environment variables.
-                               For Python, it is the module name, or a path to a
-                               file.
-                               For Node.js, it is the npm script name, or a path to
-                               a JS/MJS file. You can also pass in a directory name,
-                               provided that directory contains an "index.js" file.
-  -i, --input=<value>          Optional JSON input to
-                               be given to the Actor.
-      --input-file=<value>     Optional path to a JSON file
-                               with input for the Actor. To read from standard input
-                               and wait until all input arrives, use `-`. Without
-                               this flag or `--input`, the CLI still reads standard
-                               input, but stops waiting if input is slow to start or
-                               pauses.
-      --port=<value>           The port the Actor's web
-                               server listens on. Use with --server. Defaults to
-                               4321.
-      --profile=<value>        The stored account to use
-                               for this command, by name or user ID. See "apify auth
-                               list".
-  -p, --purge                  Whether to purge the
-                               default request queue, dataset and key-value store
-                               before the run starts.
-                               For crawlee projects, this is the default behavior,
-                               and the flag is optional.
-                               Use `--no-purge` to keep the storage folder intact.
-      --resurrect              Whether to keep the default
-                               request queue, dataset and key-value store before the
-                               run starts.
-      --server                 Run the Actor the way the
-                               platform starts it for its server interface: sets
-                               APIFY_META_ORIGIN=STANDBY and the web server port,
-                               then sends the readiness probe and prints the local
-                               URL.
+      --entrypoint=<value>  Optional entrypoint for running
+                            with injected environment variables.
+                            For Python, it is the module name, or a path to a file.
+                            For Node.js, it is the npm script name, or a path to a
+                            JS/MJS file. You can also pass in a directory name,
+                            provided that directory contains an "index.js" file.
+  -i, --input=<value>       Optional JSON input to be
+                            given to the Actor.
+      --input-file=<value>  Optional path to a JSON file with
+                            input for the Actor. To read from standard input and
+                            wait until all input arrives, use `-`. Without this flag
+                            or `--input`, the CLI still reads standard input, but
+                            stops waiting if input is slow to start or pauses.
+      --port=<value>        The port the Actor's web server
+                            listens on. Use with --server. Defaults to 4321.
+      --profile=<value>     The stored account to use for this
+                            command, by name or user ID. See "apify auth list".
+  -p, --purge               Whether to purge the default
+                            request queue, dataset and key-value store before the
+                            run starts.
+                            For crawlee projects, this is the default behavior, and
+                            the flag is optional.
+                            Use `--no-purge` to keep the storage folder intact.
+      --resurrect           Whether to keep the default
+                            request queue, dataset and key-value store before the
+                            run starts.
+      --server              Run the Actor the way the platform
+                            starts it for its server interface: sets
+                            APIFY_META_ORIGIN=STANDBY and the web server port, then
+                            sends the readiness probe and prints the local URL.
 ```
 
 ##### `apify validate-schema`
@@ -1048,8 +979,7 @@ DESCRIPTION
   Files matched by .gitignore and .actorignore are excluded. Use negation 
   patterns (e.g. !dist/) in .actorignore to force-include git-ignored files. 
   .env and .env.* files are never uploaded, except .env.example.
-  Env vars aren't sent: "environmentVariables" in '.actor/actor.json' applies to
-   local runs only. Set platform env vars with apify env push or in Apify 
+  Env vars aren't sent. Set platform env vars with apify env push or in Apify 
   Console.
   If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push 
   uploads the whole Git repository: the Actor folder as above, and everything 
@@ -1059,9 +989,9 @@ DESCRIPTION
 
 USAGE
   $ apify actors push [actorId] [--all]
-                      [--allow-missing-secrets] [--apply-env-vars-to-build]
-                      [-b <value>] [--dir <value>] [-f] [--json] [--open]
-                      [--profile <value>] [-v <value>] [-w <value>]
+                      [--apply-env-vars-to-build] [-b <value>] [--dir <value>]
+                      [-f] [--json] [--open] [--profile <value>] [-v <value>]
+                      [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -1073,8 +1003,6 @@ FLAGS
                                  in the subdirectories, except the ones ignored by
                                  .gitignore. Works only from a directory without an
                                  Actor config of its own.
-      --allow-missing-secrets    Deprecated, has no
-                                 effect: apify push doesn't send env vars.
       --apply-env-vars-to-build  Make the environment
                                  variables also available to the Actor build
                                  process. Use --no-apply-env-vars-to-build to turn

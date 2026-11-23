@@ -339,7 +339,7 @@ describe('apify push in a repository with several Actors', () => {
 			expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 		});
 
-		it('records the environmentVariables counts summed over every pushed Actor', async () => {
+		it('stops each Actor with environmentVariables, pushes the others, and records the summed counts', async () => {
 			await write(
 				`actors/a/${LOCAL_CONFIG_PATH}`,
 				JSON.stringify({
@@ -363,9 +363,15 @@ describe('apify push in a repository with several Actors', () => {
 
 			const instance = await run({ flags_all: true });
 
-			expect(commandProcess.exitCode).toBeFalsy();
-			expect(pushedActorIds()).toEqual([ACTOR_A.id, ACTOR_B.id, ACTOR_C.id]);
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+			expect(pushedActorIds()).toEqual([ACTOR_C.id]);
+			expect(
+				stderr()
+					.split('\n')
+					.filter((line) => line.includes('"environmentVariables" in .actor/actor.json is no longer supported.')),
+			).toHaveLength(2);
 			expect(instance['telemetryData'].push).toMatchObject({ envVarsCount: 3, secretRefsCount: 1 });
+			expect(instance['telemetryData'].pushSelection).toEqual({ selected: 3, failed: 2 });
 		});
 
 		it('passes --version and --build-tag to every version payload', async () => {

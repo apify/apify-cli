@@ -33,7 +33,6 @@ MYSQL_PASSWORD='p4ss word'
 
 1. Your shell environment.
 1. The variables the CLI sets for the run, such as `APIFY_TOKEN` and the input key.
-1. `environmentVariables` in `.actor/actor.json` (deprecated, see [Deprecations](#deprecations)).
 1. `.env`.
 
 `.env` wins over every other source, including the variables the CLI sets.
@@ -193,7 +192,7 @@ apify push --force
 
 If your project keeps its variables in `environmentVariables` in `.actor/actor.json`, move them to `.env` and the platform:
 
-1. Run `apify env migrate`. It shows what moves and asks first. Then it writes the values to `.env`, resolves `@secret` references from the local secrets store, adds `.env` to `.gitignore`, and removes `environmentVariables` from `.actor/actor.json`. Keys already in `.env` keep their value. When a referenced secret isn't in the local secrets store, the command stops; pass `--allow-missing-secrets` to write its key with an empty value instead. When a name can't be in `.env`, the command stops and changes nothing; rename the variable in `.actor/actor.json` first.
+1. Run `apify env migrate`. It shows what moves and asks first. Then it writes the values to `.env`, resolves `@secret` references from the local secrets store, adds `.env` to `.gitignore`, and removes `environmentVariables` from `.actor/actor.json`. Keys already in `.env` keep their value. The local secrets store is `~/.apify/secrets.json`, which `apify secrets add` wrote in earlier CLI versions. When a referenced secret isn't in it, the command stops; pass `--allow-missing-secrets` to write its key with an empty value instead. When a name can't be in `.env`, the command stops and changes nothing; rename the variable in `.actor/actor.json` first.
 1. Run `apify env push` to set the values on the platform. Variables that exist only in Apify Console stay unless you pass `--prune`.
 
 ```bash
@@ -201,13 +200,13 @@ apify env migrate
 apify env push
 ```
 
-## Deprecations
+## Removed features
 
-- **`apify push` no longer uploads env vars.** It used to send `environmentVariables` from `.actor/actor.json` and replace the whole list on the Actor version, which deleted the variables set only in Apify Console. Now it never changes the platform env vars, and the variables already there stay as they are. When `.actor/actor.json` has `environmentVariables`, `apify push` warns that they apply to local runs only. `--allow-missing-secrets` on `apify push` has no effect.
-- **`environmentVariables` in `.actor/actor.json`** still applies to `apify run`, which prints a deprecation warning when the object isn't empty. Use `.env` instead.
-- **`@secret` references and `apify secrets`** still work for local runs. The `apify secrets` commands print a deprecation warning, and `apify run` prints one for the `environmentVariables` that hold the references. Use `.env` for local values, and `apify env set --secret` or `apify env push` for platform values.
+- **`apify push` doesn't upload env vars.** It used to send `environmentVariables` from `.actor/actor.json` and replace the whole list on the Actor version, which deleted the variables set only in Apify Console. Now it never changes the platform env vars, and the variables already there stay as they are.
+- **`environmentVariables` in `.actor/actor.json`** isn't supported anymore. When the object isn't empty, `apify run` and `apify push` stop with an error that points to `apify env migrate`. An empty `{}` is ignored. Use `.env` instead.
+- **`@secret` references, `apify secrets`, and `--allow-missing-secrets` on `apify run` and `apify push`** are removed. Use `.env` for local values, and `apify env set --secret` or `apify env push` for platform values.
 
-All three are removed in the next major version of the Apify CLI. For the upgrade steps, see [MIGRATIONS.md](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).
+For the upgrade steps, see [MIGRATIONS.md](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).
 
 ## Apply env vars to the build
 
