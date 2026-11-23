@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { ACTOR_SOURCE_TYPES } from '@apify/consts';
+import { ActorSourceType } from 'apify-client';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { testUserClient } from '../../__setup__/config.js';
@@ -32,7 +32,7 @@ describe('[api] apify env ls', () => {
 			versions: [
 				{
 					versionNumber: '0.0',
-					sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES as never,
+					sourceType: ActorSourceType.SourceFiles,
 					buildTag: 'latest',
 					sourceFiles: [],
 					envVars: [
@@ -51,14 +51,14 @@ describe('[api] apify env ls', () => {
 			versions: [
 				{
 					versionNumber: '0.0',
-					sourceType: ACTOR_SOURCE_TYPES.GIT_REPO as never,
+					sourceType: ActorSourceType.GitRepo,
 					buildTag: 'latest',
 					gitRepoUrl: 'https://github.com/apify/actor-templates',
 					envVars: [
 						{ name: 'PLAIN_VAR', value: 'plain-value', isSecret: false },
 						{ name: 'SECRET_VAR', value: SECRET_VALUE, isSecret: true },
 					],
-				} as never,
+				},
 			],
 		});
 		gitRepoActorId = gitRepoActor.id;
