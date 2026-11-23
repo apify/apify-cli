@@ -98,7 +98,7 @@ export function readDotEnv(actorDir: string): DotEnvFile {
 		const { code, message } = err as NodeJS.ErrnoException;
 		if (code === 'ENOENT' || code === 'EISDIR')
 			return { path, exists: false, content: '', vars: {}, malformedLines: [] };
-		envFail(`Couldn't read ${path}: ${message}`);
+		envFail(`Couldn't read ${path} (${code ?? message}).`);
 	}
 
 	// Editors on Windows can save a UTF-8 byte order mark, which would otherwise become part of the first name.

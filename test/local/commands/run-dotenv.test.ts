@@ -162,7 +162,7 @@ writeFileSync(String.raw\`${resultPath}\`, JSON.stringify(Object.fromEntries(nam
 			await testRunCommand(RunCommand, { flags_purge: true });
 
 			// The exit code is checked in dotenv.test.ts: useTempPath mocks node:process, so this file can't see it.
-			expect(logMessages.error.join('\n')).toContain(`Couldn't read ${joinPath('.env')}`);
+			expect(logMessages.error.join('\n')).toContain(`Couldn't read ${joinPath('.env')} (EACCES).`);
 			expect(existsSync(resultPath)).toBe(false);
 			expect(existsSync(datasetItem)).toBe(true);
 		},

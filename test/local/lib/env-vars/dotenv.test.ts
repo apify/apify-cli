@@ -155,7 +155,7 @@ describe('readDotEnv', () => {
 			writeFileSync(join(actorDir, '.env'), 'A=one\n');
 			chmodSync(join(actorDir, '.env'), 0o000);
 
-			expect(() => readDotEnv(actorDir)).toThrow(`Couldn't read ${join(actorDir, '.env')}:`);
+			expect(() => readDotEnv(actorDir)).toThrow(new Error(`Couldn't read ${join(actorDir, '.env')} (EACCES).`));
 			expect(process.exitCode).toBe(5);
 		},
 	);
