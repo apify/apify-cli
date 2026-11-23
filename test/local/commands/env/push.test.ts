@@ -410,6 +410,54 @@ describe('apify env push', () => {
 		},
 	);
 
+	describe("with platform names that .env can't hold", () => {
+		beforeEach(() => {
+			envVarsOnPlatform().push(
+				{ name: 'DATABASE-URL', value: SECRET_VALUE, isSecret: true },
+				{ name: 'CLEAR\u001b[2J', value: 'x', isSecret: false },
+			);
+		});
+
+		it('keeps them with --prune and names them in a warning with control characters escaped', async () => {
+			writeDotEnv('SAME=same-value\n');
+
+			const instance = await testRunCommand(EnvPushCommand, {
+				flags_dir: actorDir,
+				flags_yes: true,
+				flags_prune: true,
+			});
+
+			expect(process.exitCode).toBeUndefined();
+			expect(envPlatform.writes.map(({ method, name }) => `${method} ${name}`)).toEqual([
+				'delete API_KEY',
+				'delete CHANGED',
+				'delete OLD_VAR',
+			]);
+			expect(envVarOnPlatform('DATABASE-URL')).toEqual({ name: 'DATABASE-URL', value: SECRET_VALUE, isSecret: true });
+			expect(envVarOnPlatform('CLEAR\u001b[2J')).toBeDefined();
+			expect(stderr()).toContain(
+				"Skipped DATABASE-URL, CLEAR\\x1b[2J: a name in .env can only have letters, digits, and underscores, and can't start with a digit.",
+			);
+			expect(stdout()).not.toMatch(/DATABASE-URL|CLEAR/);
+			expect(`${stdout()}\n${stderr()}`).not.toContain('\u001b[2J');
+			expectNoValues(instance);
+		});
+
+		it('leaves them out of the --json changes', async () => {
+			writeDotEnv('SAME=same-value\n');
+
+			await testRunCommand(EnvPushCommand, { flags_dir: actorDir, flags_yes: true, flags_json: true });
+
+			expect(JSON.parse(stdout()).changes.map(({ name }: { name: string }) => name)).toEqual([
+				'API_KEY',
+				'CHANGED',
+				'OLD_VAR',
+				'SAME',
+			]);
+			expect(envPlatform.writes).toEqual([]);
+		});
+	});
+
 	it('fails on a name that is too long before any write', async () => {
 		writeDotEnv(`${'A'.repeat(101)}=x\nNEW_VAR=x\n`);
 

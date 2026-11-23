@@ -15,6 +15,9 @@ export interface DotEnvFile {
 }
 
 const VALID_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Whether a variable with this name can be in .env: only letters, digits, and underscores, not starting with a digit. */
+export const isValidDotEnvName = (name: string) => VALID_NAME.test(name);
 const QUOTES = ['"', "'", '`'];
 
 const trimSpaces = (text: string) => text.replace(/^[ \t]+|[ \t]+$/g, '');
