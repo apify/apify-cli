@@ -68,7 +68,9 @@ jobs:
             contents: read
 
         runs-on: ubuntu-latest
-        environment: npm
+        environment:
+            name: npm
+            deployment: false
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
