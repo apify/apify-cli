@@ -24,10 +24,10 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: actions/checkout@v7.0.1
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
-              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              uses: actions/setup-node@v7.1.0
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
                   check-latest: true
@@ -49,10 +49,10 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: actions/checkout@v7.0.1
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
-              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              uses: actions/setup-node@v7.1.0
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
                   check-latest: true
@@ -86,10 +86,10 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: actions/checkout@v7.0.1
 
             - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              uses: actions/setup-node@v7.1.0
               with:
                   node-version: ${{ matrix.node-version }}
                   check-latest: true
@@ -99,7 +99,7 @@ jobs:
 
             - name: Set up Python (Windows)
               if: ${{ matrix.os == 'windows-2025' }}
-              uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+              uses: actions/setup-python@v7.0.0
               with:
                   python-version: 3.14
 
@@ -120,10 +120,10 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: actions/checkout@v7.0.1
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
-              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              uses: actions/setup-node@v7.1.0
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
                   check-latest: true
@@ -156,10 +156,10 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: actions/checkout@v7.0.1
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
-              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              uses: actions/setup-node@v7.1.0
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
                   check-latest: true
@@ -168,7 +168,7 @@ jobs:
               uses: apify/actions/pnpm-install@v1.6.2
 
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+              uses: actions/setup-python@v7.0.0
               with:
                   python-version: ${{ matrix.python-version }}
 
@@ -205,10 +205,10 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: actions/checkout@v7.0.1
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
-              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              uses: actions/setup-node@v7.1.0
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
                   check-latest: true
@@ -243,10 +243,10 @@ jobs:
         timeout-minutes: 20
 
         steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: actions/checkout@v7.0.1
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
-              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              uses: actions/setup-node@v7.1.0
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
                   check-latest: true
@@ -255,7 +255,7 @@ jobs:
               uses: apify/actions/pnpm-install@v1.6.2
 
             - name: Install bun
-              uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+              uses: oven-sh/setup-bun@v2.2.0
               with:
                   bun-version-file: .bun-version
                   no-cache: true
@@ -276,7 +276,7 @@ jobs:
               run: pnpm run insert-cli-metadata && pnpm run build-bundles
 
             - name: Upload Bundles
-              uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+              uses: actions/upload-artifact@v7.0.2
               with:
                   name: apify-cli-bundles-${{ matrix.label }}
                   path: bundles/**
