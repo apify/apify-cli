@@ -107,6 +107,14 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
 	}
 }
 
+/**
+ * The API returns a reduced build, without `meta`, `stats`, `options`, `usage` or a log,
+ * to users who can read the Actor but can neither write to it nor build it.
+ */
+export function isReducedBuild(build: Build): boolean {
+	return !build.meta;
+}
+
 export function consoleActorUrl(actorId: string): string {
 	return `${getConsoleUrl()}/actors/${actorId}`;
 }

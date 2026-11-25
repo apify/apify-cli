@@ -693,14 +693,11 @@ export const outputJobLog = async ({
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
-		if (process.env.APIFY_NO_LOGS_IN_TESTS) {
-			return;
-		}
-
-		// Undefined when the job failed before its container started.
+		// Undefined when the job failed before its container started, or when the user can't read the log.
 		const log = await client.log(logId).get();
-		if (log) process.stderr.write(log);
-		return;
+		if (log === undefined) return 'no-logs';
+		if (!process.env.APIFY_NO_LOGS_IN_TESTS) process.stderr.write(log);
+		return 'finished';
 	}
 
 	// In other case stream it to stderr

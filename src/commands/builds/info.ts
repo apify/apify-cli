@@ -82,9 +82,11 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 		];
 
 		if (build.finishedAt) {
-			message.push(
-				`  ${chalk.yellow('Finished')}: ${TimestampFormatter.display(build.finishedAt)} (took ${chalk.gray(DurationFormatter.format(build.stats?.durationMillis ?? 0))})`,
-			);
+			const durationMillis = build.stats?.durationMillis;
+			const took =
+				durationMillis === undefined ? '' : ` (took ${chalk.gray(DurationFormatter.format(durationMillis))})`;
+
+			message.push(`  ${chalk.yellow('Finished')}: ${TimestampFormatter.display(build.finishedAt)}${took}`);
 		} else {
 			const diff = Date.now() - build.startedAt.getTime();
 			message.push(`  ${chalk.yellow('Finished')}: ${chalk.gray(`Running for ${DurationFormatter.format(diff)}`)}`);
@@ -102,7 +104,10 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 			message.push(`  ${chalk.yellow('Docker Image Size')}: ${prettyPrintBytes({ bytes: dockerImageSize })}`);
 		}
 
-		message.push(`  ${chalk.yellow('Origin')}: ${build.meta.origin ?? 'UNKNOWN'}`);
+		// Missing when the user can neither write to nor build the Actor
+		if (build.meta) {
+			message.push(`  ${chalk.yellow('Origin')}: ${build.meta.origin ?? 'UNKNOWN'}`);
+		}
 
 		message.push('');
 
