@@ -230,8 +230,8 @@ importers:
         specifier: ~8.20.0
         version: 8.20.0
       apify-client:
-        specifier: ^3.0.0-beta.115
-        version: 3.0.0-beta.115(axios@1.21.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))
+        specifier: ^3.0.0-rc.2
+        version: 3.0.0-rc.2(axios@1.21.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1))
       archiver:
         specifier: ~8.0.0
         version: 8.0.0(bare-buffer@3.7.1)
@@ -4678,8 +4678,8 @@ packages:
   apify-client@2.26.0:
     resolution: {integrity: sha512-IVoJLHAwVh0jWTB8hLIiA55cmkS5QSTN30b2MjvXO9MyjyD2dVT7+wYAPhWfsFsteeCXOIaAK3GcCJyWAXzQbQ==}
 
-  apify-client@3.0.0-beta.115:
-    resolution: {integrity: sha512-CXu15pH8npX182YmarzuHTTEttd9oER0QcGzKFTKXMC15pzkDcxUybGsL7czCp6n+4bOng+eRGdwqMLJA9+jfg==}
+  apify-client@3.0.0-rc.2:
+    resolution: {integrity: sha512-KEXG3Jk7yqpzoDTMJuhYHKgTtUR8z0HD/u5ZztPHLV3UlpyGCPtYd30jV2fWZtWKWrLdedJAJ7Ps28QaYgOdwQ==}
     engines: {node: '>=22.15.0'}
     peerDependencies:
       axios: ^1.21.1
@@ -14892,7 +14892,7 @@ snapshots:
       - debug
       - supports-color
 
-  apify-client@3.0.0-beta.115(axios@1.21.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)):
+  apify-client@3.0.0-rc.2(axios@1.21.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)):
     dependencies:
       '@apify/consts': 3.1.0
       '@apify/log': 3.0.2

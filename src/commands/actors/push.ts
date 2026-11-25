@@ -1041,12 +1041,10 @@ Skipping push. Use --force to override.`,
 		}
 
 		const actorVersionSource = { tarballUrl, sourceFiles, sourceType, ...(actorPath ? { actorPath } : {}) };
-		// Inline source files make these request bodies megabytes large, too much for the default 5 second tier.
-		const uploadOptions = { timeoutSecs: 'long' } as const;
 		if (actorCurrentVersion) {
 			const actorVersionModifier = { ...actorVersionSource, buildTag, envVars, applyEnvVarsToBuild };
 			// TODO: fix this type too -.-
-			await actorClient.version(version).update(actorVersionModifier as never, uploadOptions);
+			await actorClient.version(version).update(actorVersionModifier as never);
 			run({ message: `Updated version ${version} for Actor ${actor.name}.` });
 		} else {
 			const actorNewVersion = {
@@ -1057,7 +1055,9 @@ Skipping push. Use --force to override.`,
 				applyEnvVarsToBuild,
 			};
 
-			await actorClient.versions().create({ ...actorNewVersion } as never, uploadOptions);
+			await actorClient.versions().create({
+				...actorNewVersion,
+			} as never);
 
 			run({ message: `Created version ${version} for Actor ${actor.name}.` });
 
