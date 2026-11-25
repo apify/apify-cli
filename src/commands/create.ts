@@ -6,7 +6,7 @@ import { isCI } from 'ci-info';
 import { gte, minVersion } from 'semver';
 import which from 'which';
 
-import { fetchManifest, manifestUrl } from '@apify/actor-templates';
+import { fetchManifest } from '@apify/actor-templates';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
@@ -107,7 +107,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override flags = {
 		template: Flags.string({
 			char: 't',
-			description: `Template for the Actor. If not provided, the command will prompt for it. Visit ${manifestUrl} to find available template names.`,
+			description:
+				"Template for the Actor. If not provided, the command will prompt for it. Run 'apify templates ls' to list available template names.",
 			required: false,
 		}),
 		'use-case': Flags.string({
