@@ -1,8 +1,7 @@
 import { existsSync } from 'node:fs';
 import process from 'node:process';
 
-import { ApifyApiError, ApifyClient, type ApifyClientOptions } from 'apify-client';
-import { AxiosHeaders } from 'axios';
+import { ApifyApiError, ApifyClient, type ApifyClientOptions, FetchHttpClient } from 'apify-client';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
@@ -26,7 +25,7 @@ import {
 } from './credentials.js';
 import { clearOAuthSession, getAccessToken } from './oauth/session.js';
 import { warning } from './outputs.js';
-import { ActorRuntimeNotRunningError, runtimeDownInterceptor, targetsConnectedRuntime } from './runtime/client.js';
+import { ActorRuntimeNotRunningError, runtimeDownFetch, targetsConnectedRuntime } from './runtime/client.js';
 import { resolveApiBaseUrl } from './runtime/target.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -227,33 +226,30 @@ export function describeAuthFailure(auth: ResolvedAuth | undefined, error?: unkn
 	}
 }
 
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
-
 /** Base URL and headers, with no token and so no credential lookup. */
-export const getAnonymousApifyClientOptions = (apiBaseUrl?: string): ApifyClientOptions => {
-	const baseUrl = apiBaseUrl || resolveApiBaseUrl();
-	return {
-		baseUrl,
-		requestInterceptors: [
-			(config) => {
-				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
-
-				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
-					config.headers![key] = value;
-				}
-
-				return config;
-			},
-			...(targetsConnectedRuntime(baseUrl) ? [runtimeDownInterceptor] : []),
-		],
-	};
-};
+export const getAnonymousApifyClientOptions = (apiBaseUrl?: string): ApifyClientOptions => ({
+	baseUrl: apiBaseUrl || resolveApiBaseUrl(),
+	headers: APIFY_CLIENT_DEFAULT_HEADERS,
+});
 
 /** Options for a caller that already holds a token, so nothing is resolved. */
 export const getApifyClientOptionsForToken = (token: string, apiBaseUrl?: string): ApifyClientOptions => ({
 	...getAnonymousApifyClientOptions(apiBaseUrl),
 	token,
 });
+
+/** Builds the client for `options`. One for the connected runtime reports a stopped container at once. */
+export function createApifyClient(options: ApifyClientOptions): ApifyClient {
+	if (!targetsConnectedRuntime(options.baseUrl)) return new ApifyClient(options);
+
+	const { baseUrl, publicBaseUrl, ...httpClientOptions } = options;
+	return ApifyClient.withCustomHttpClient({
+		baseUrl,
+		publicBaseUrl,
+		token: options.token,
+		httpClient: new FetchHttpClient({ ...httpClientOptions, fetch: runtimeDownFetch }),
+	});
+}
 
 /**
  * The only credential writer in the CLI. Returns `null` when the token is rejected, writing nothing.
@@ -263,7 +259,7 @@ export async function loginWithToken(
 	token: string,
 	apiBaseUrl?: string,
 ): Promise<{ client: ApifyClient; userInfo: AuthJSON } | null> {
-	const apifyClient = new ApifyClient(getApifyClientOptionsForToken(token, apiBaseUrl));
+	const apifyClient = createApifyClient(getApifyClientOptionsForToken(token, apiBaseUrl));
 
 	let userInfo;
 	try {
@@ -273,7 +269,7 @@ export async function loginWithToken(
 		return null;
 	}
 
-	if (!userInfo.id) {
+	if (!userInfo?.id) {
 		throw new Error('The Apify API returned no user ID for this token, so the login cannot be stored.');
 	}
 
@@ -282,7 +278,7 @@ export async function loginWithToken(
 	// Brings a stored account to the current shape first, or the upsert below would find nothing to keep.
 	await ensureCredentialsCurrent();
 
-	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
+	const { organizationOwnerUserId } = userInfo;
 	upsertProfile(userInfo.id, {
 		username: userInfo.username,
 		name: userInfo.username || userInfo.id,

@@ -1,5 +1,5 @@
 import { Time } from '@sapphire/duration';
-import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
+import type { ActorListItem, ActorResource, RunListItem, TaggedBuildInfo, PaginatedList } from 'apify-client';
 import chalk from 'chalk';
 
 import type { ACTOR_JOB_STATUSES } from '@apify/consts';
@@ -79,19 +79,9 @@ const myRecentlyUsedTable = new ResponsiveTable({
 	},
 });
 
-interface HydratedListData {
-	id: string;
-	createdAt: Date;
-	modifiedAt: Date;
-	name: string;
-	username: string;
-	title: string;
-	stats: {
-		totalRuns: number;
-		lastRunStartedAt: string | null;
-	};
-	actor: Actor | null;
-	lastRun: ActorRunListItem | null;
+interface HydratedListData extends ActorListItem {
+	actor: ActorResource | null;
+	lastRun: RunListItem | null;
 }
 
 export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
@@ -180,14 +170,14 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 									limit: 1,
 									offset: 0,
 									total: 0,
-								}) satisfies PaginatedList<ActorRunListItem>,
+								}) satisfies PaginatedList<RunListItem>,
 						);
 
 					return {
 						...actorData,
 						actor: actor ?? null,
-						lastRun: (runs.items[0] ?? null) as ActorRunListItem | null,
-					} as HydratedListData;
+						lastRun: (runs.items[0] ?? null) as RunListItem | null,
+					};
 				}),
 			),
 		};
@@ -217,7 +207,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			6;
 
 		for (const item of actorList.items) {
-			const lastRunDisplayedTimestamp = item.stats.lastRunStartedAt
+			const lastRunDisplayedTimestamp = item.stats?.lastRunStartedAt
 				? MultilineTimestampFormatter.display(item.stats.lastRunStartedAt)
 				: '';
 
@@ -238,7 +228,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			const defaultBuild = item.actor
 				? (() => {
 						const buildVersionToTag = Object.entries(
-							(item.actor.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>,
+							(item.actor.taggedBuilds ?? {}) as Record<string, TaggedBuildInfo>,
 						).find(
 							([tag, data]) =>
 								data.buildNumber === item.actor!.defaultRunOptions.build || tag === item.actor!.defaultRunOptions.build,

@@ -1,4 +1,4 @@
-import type { ActorRun, ApifyClient } from 'apify-client';
+import type { Run, ApifyClient } from 'apify-client';
 
 import {
 	buildRunResultJson,
@@ -8,7 +8,7 @@ import {
 	printRunResultSummary,
 } from '../../../src/lib/commands/run-result.js';
 
-const makeRun = (overrides: Partial<ActorRun> = {}): ActorRun =>
+const makeRun = (overrides: Partial<Run> = {}): Run =>
 	({
 		id: 'run123',
 		actId: 'actor456',
@@ -17,7 +17,7 @@ const makeRun = (overrides: Partial<ActorRun> = {}): ActorRun =>
 		defaultDatasetId: 'dataset789',
 		defaultKeyValueStoreId: 'kvs012',
 		...overrides,
-	}) as ActorRun;
+	}) as Run;
 
 const fakeClientWithLog = (log: string | undefined) =>
 	({

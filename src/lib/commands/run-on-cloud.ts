@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import type { ActorRun, ActorStartOptions, ApifyClient, TaskStartOptions } from 'apify-client';
+import type { Run, ActorStartOptions, ApifyClient, TaskStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
 import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
@@ -49,15 +49,15 @@ async function startActorWithExtraParams(
 	input: { inputToUse: unknown; contentType: string } | null,
 	runOptions: ActorStartOptions,
 	extraStartParams: Record<string, string>,
-): Promise<ActorRun> {
-	const { waitForFinish, timeout, memory, build } = runOptions;
+): Promise<Run> {
+	const { waitForFinish, runTimeoutSecs, memory, build } = runOptions;
 
 	const response = await apifyClient.httpClient.call<{ data: { id: string } }>({
 		url: `${apifyClient.actor(actorId).url}/runs`,
 		method: 'POST',
 		data: input?.inputToUse,
 		headers: input ? { 'content-type': input.contentType } : undefined,
-		params: { waitForFinish, timeout, memory, build, ...extraStartParams },
+		params: { waitForFinish, timeout: runTimeoutSecs, memory, build, ...extraStartParams },
 	});
 
 	return (await apifyClient.run(response.data.data.id).get())!;
@@ -99,7 +99,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		}
 	}
 
-	let run: ActorRun;
+	let run: Run;
 
 	try {
 		if (extraStartParams && type === 'Actor') {

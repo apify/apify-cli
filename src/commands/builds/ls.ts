@@ -1,4 +1,4 @@
-import type { BuildCollectionClientListItem } from 'apify-client';
+import type { BuildListItem } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -99,7 +99,7 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 
 		const buildTagToActorVersion = Object.entries(actorInfo.taggedBuilds ?? {}).reduce(
 			(acc, [tag, data]) => {
-				acc[data.buildNumber!] = tag;
+				if (data?.buildNumber) acc[data.buildNumber] = tag;
 
 				return acc;
 			},
@@ -167,7 +167,7 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 		buildsForVersion,
 		buildTagToActorVersion,
 	}: {
-		buildsForVersion: BuildCollectionClientListItem[];
+		buildsForVersion: BuildListItem[];
 		buildTagToActorVersion: Record<string, string>;
 	}) {
 		const table = tableFactory();

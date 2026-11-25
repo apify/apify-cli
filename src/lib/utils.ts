@@ -12,13 +12,14 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
+import { Readable } from 'node:stream';
 import { finished } from 'node:stream/promises';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
-import { type ActorRun, ApifyClient, type Build } from 'apify-client';
+import type { ApifyClient, Build, Run } from 'apify-client';
 import { ZipArchive } from 'archiver';
 import axios from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
@@ -43,6 +44,7 @@ import {
 
 import { lookUpActiveProfile, lookUpProfile } from './auth-file.js';
 import {
+	createApifyClient,
 	describeAuthFailure,
 	getAnonymousApifyClientOptions,
 	getApifyClientOptionsForToken,
@@ -164,7 +166,7 @@ async function getLoggedClient(): Promise<{ client: ApifyClient | null; auth?: R
 	const auth = await resolveAuth();
 	if (!auth) return { client: null };
 
-	const apifyClient = new ApifyClient(getApifyClientOptionsForToken(auth.token));
+	const apifyClient = createApifyClient(getApifyClientOptionsForToken(auth.token));
 
 	try {
 		const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
@@ -188,10 +190,11 @@ export async function getCurrentUserInfo(): Promise<AuthJSON> {
 	if (cachedUserInfo?.token === auth.token) return cachedUserInfo.userInfo;
 	if (auth.source !== 'env') return getLocalUserInfo(auth.profile?.id);
 
-	const apifyClient = new ApifyClient({
+	const apifyClient = createApifyClient({
 		...getApifyClientOptionsForToken(auth.token),
 		maxRetries: 1,
-		timeoutSecs: 10,
+		timeoutShortSecs: 10,
+		timeoutMaxSecs: 10,
 	});
 	const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
 	cachedUserInfo = { token: auth.token, userInfo };
@@ -684,12 +687,12 @@ export const outputJobLog = async ({
 	timeoutMillis,
 	apifyClient,
 }: {
-	job: ActorRun | Build;
+	job: Run | Build;
 	timeoutMillis?: number;
 	apifyClient?: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
-	const client = apifyClient || new ApifyClient(getAnonymousApifyClientOptions());
+	const client = apifyClient || createApifyClient(getAnonymousApifyClientOptions());
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
@@ -704,11 +707,13 @@ export const outputJobLog = async ({
 	}
 
 	// In other case stream it to stderr
-	const stream = await client.log(logId).stream();
+	const webStream = await client.log(logId).stream();
 
-	if (!stream) {
+	if (!webStream) {
 		return 'no-logs';
 	}
+
+	const stream = Readable.fromWeb(webStream);
 
 	return new Promise<'no-logs' | 'finished' | 'timeouts'>((resolve, reject) => {
 		let nodeTimeout: NodeJS.Timeout | null = null;

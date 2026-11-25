@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import type { ActorRun, ApifyClient } from 'apify-client';
+import type { Run, ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
@@ -21,7 +21,7 @@ const OPERATION_LABELS: Record<RunResultOperation, string> = {
 /** How many trailing log lines to surface as the failure reason. */
 const LOG_TAIL_LINES = 10;
 
-function isSucceeded(run: ActorRun): boolean {
+function isSucceeded(run: Run): boolean {
 	return run.status === ACTOR_JOB_STATUSES.SUCCEEDED;
 }
 
@@ -30,7 +30,7 @@ function isSucceeded(run: ActorRun): boolean {
  * callers (CI, shell chains, agents) can tell a started run from a successful one.
  * Failed runs propagate the Actor's own exit code when present (mirroring `apify run`).
  */
-export function getRunExitCode(run: ActorRun): number {
+export function getRunExitCode(run: Run): number {
 	switch (run.status) {
 		case ACTOR_JOB_STATUSES.SUCCEEDED:
 			return 0;
@@ -46,7 +46,7 @@ export function getRunExitCode(run: ActorRun): number {
 }
 
 /** A generic, status-specific reason used when the platform did not provide a status message. */
-function genericReason(run: ActorRun): string {
+function genericReason(run: Run): string {
 	switch (run.status) {
 		case ACTOR_JOB_STATUSES.ABORTED:
 		case ACTOR_JOB_STATUSES.ABORTING:
@@ -63,7 +63,7 @@ function genericReason(run: ActorRun): string {
  * Fetches the last few log lines of a finished run to explain a failure. Returns an empty
  * array on success or when the log cannot be retrieved (best-effort, never throws).
  */
-export async function fetchRunLogTail(apifyClient: ApifyClient, run: ActorRun): Promise<string[]> {
+export async function fetchRunLogTail(apifyClient: ApifyClient, run: Run): Promise<string[]> {
 	if (isSucceeded(run)) {
 		return [];
 	}
@@ -72,7 +72,7 @@ export async function fetchRunLogTail(apifyClient: ApifyClient, run: ActorRun): 
 }
 
 export interface RunResultOptions {
-	run: ActorRun;
+	run: Run;
 	operation: RunResultOperation;
 	logTail: string[];
 }
@@ -157,7 +157,7 @@ export function printRunResultSummary({ run, operation, logTail }: RunResultOpti
 
 export interface FinalizeRunOptions {
 	apifyClient: ApifyClient;
-	run: ActorRun;
+	run: Run;
 	operation: RunResultOperation;
 	json: boolean;
 	silent?: boolean;

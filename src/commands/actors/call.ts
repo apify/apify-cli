@@ -1,11 +1,11 @@
 import process from 'node:process';
 
 import {
-	type ActorRun,
+	type Run,
 	type ActorStartOptions,
-	type ActorTaggedBuild,
+	type TaggedBuildInfo,
 	type ApifyClient,
-	type Dataset,
+	type DatasetResource,
 	DownloadItemsFormat,
 } from 'apify-client';
 import chalk from 'chalk';
@@ -152,7 +152,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		}
 
 		if (this.flags.timeout !== undefined) {
-			runOpts.timeout = this.flags.timeout;
+			runOpts.runTimeoutSecs = this.flags.timeout;
 		}
 
 		if (this.flags.memory) {
@@ -181,7 +181,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		}
 
 		let runStarted = false;
-		let run: ActorRun;
+		let run: Run;
 
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
@@ -217,12 +217,12 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 					// basic version info
 
-					const expectedActorVersion = run.buildNumber.split('.').slice(0, 2).join('.');
+					const expectedActorVersion = run.buildNumber?.split('.').slice(0, 2).join('.');
 
 					const actorVersion = actorData.versions.find((item) => item.versionNumber === expectedActorVersion);
 
 					const runVersionTaggedAs = Object.entries(
-						(actorData.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>,
+						(actorData.taggedBuilds ?? {}) as Record<string, TaggedBuildInfo>,
 					).find(([, data]) => data.buildNumber === yieldedRun.buildNumber)?.[0];
 
 					const messageParts = [`${chalk.yellow('Build')}:`, chalk.cyan(run.buildNumber)];
@@ -270,7 +270,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		if (this.flags.outputDataset && run!.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
 			const datasetId = run!.defaultDatasetId;
 
-			let info: Dataset;
+			let info: DatasetResource;
 			let retries = 4;
 
 			// Why is this needed? Sometimes, when fetching the dataset info right after the run ends, the object doesn't have the stats up-to-date.

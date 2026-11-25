@@ -63,7 +63,7 @@
 	},
 	"homepage": "https://github.com/apify/apify-cli#readme",
 	"engines": {
-		"node": ">=22"
+		"node": ">=22.15.0"
 	},
 	"dependencies": {
 		"@apify/actor-memory-expression": "^1.0.3",
@@ -86,7 +86,7 @@
 		"@skyra/jaro-winkler": "^1.1.1",
 		"adm-zip": "~0.6.1",
 		"ajv": "~8.20.0",
-		"apify-client": "^2.26.0",
+		"apify-client": "^3.0.0-rc.2",
 		"archiver": "~8.0.0",
 		"axios": "^1.21.1",
 		"chalk": "~6.0.1",

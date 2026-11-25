@@ -1,4 +1,4 @@
-import type { ActorRun, ApifyClient, Build } from 'apify-client';
+import type { Run, ApifyClient, Build } from 'apify-client';
 
 import { ACTOR_JOB_TYPES } from '@apify/consts';
 
@@ -11,9 +11,9 @@ import {
 import { CommandExitCodes } from '../../../src/lib/consts.js';
 
 const makeBuild = (status: Build['status']): Build => ({ id: 'build123', status }) as Build;
-const makeRun = (status: ActorRun['status']): ActorRun => ({ id: 'run123', status }) as ActorRun;
+const makeRun = (status: Run['status']): Run => ({ id: 'run123', status }) as Run;
 
-const fakeClient = ({ builds = [], runs = [] }: { builds?: (Build | undefined)[]; runs?: (ActorRun | undefined)[] }) =>
+const fakeClient = ({ builds = [], runs = [] }: { builds?: (Build | undefined)[]; runs?: (Run | undefined)[] }) =>
 	({
 		build: () => ({ get: async () => builds.shift() }),
 		run: () => ({ get: async () => runs.shift() }),

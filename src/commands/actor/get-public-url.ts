@@ -50,7 +50,7 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 			return;
 		}
 
-		const apifyClient = (await getApifyStorageClient()) as ApifyClient;
+		const apifyClient = (await getApifyStorageClient()) as unknown as ApifyClient;
 		const store = await apifyClient.keyValueStore(storeId).get();
 
 		if (!store) {

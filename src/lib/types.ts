@@ -5,9 +5,9 @@ export interface AuthJSON {
 	id?: string;
 	username?: string;
 	proxy?: {
-		password: string;
+		password?: string | null;
 	};
-	organizationOwnerUserId?: string;
+	organizationOwnerUserId?: string | null;
 }
 
 export function OverrideClassName<T extends typeof BuiltApifyCommand>(clazz: T): typeof BuiltApifyCommand {

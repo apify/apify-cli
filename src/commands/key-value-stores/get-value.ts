@@ -1,3 +1,5 @@
+import { pipeline } from 'node:stream/promises';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -69,7 +71,7 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 
 		if (onlyContentType) {
 			// Close the stream as otherwise the process hangs
-			itemRecord.value.destroy();
+			await itemRecord.value.cancel();
 			return;
 		}
 
@@ -77,7 +79,7 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 		if (itemRecord.contentType?.includes('application/json')) {
 			const { value: stream } = itemRecord;
 
-			const chunks: Buffer[] = [];
+			const chunks: Uint8Array[] = [];
 
 			for await (const chunk of stream) {
 				chunks.push(chunk);
@@ -97,6 +99,6 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 		}
 
 		// pipe the output to stdout
-		itemRecord.value.pipe(process.stdout);
+		await pipeline(itemRecord.value, process.stdout, { end: false });
 	}
 }

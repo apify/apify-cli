@@ -2,6 +2,7 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 
+import type { SourceCodeFile, SourceCodeFolder } from 'apify-client';
 import { downloadTemplate } from 'giget';
 import jju from 'jju';
 import { gt } from 'semver';
@@ -30,6 +31,9 @@ const extractGitHubZip = async (url: string, directoryPath: string) => {
 
 	zipFile.extractEntryTo(entries[0].entryName, directoryPath, false);
 };
+
+const isSourceFolder = (file: SourceCodeFile | SourceCodeFolder): file is SourceCodeFolder =>
+	'folder' in file && file.folder;
 
 export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 	static override name = 'pull' as const;
@@ -192,10 +196,9 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 				for (const { file, target } of files) {
 					mkdirSync(dirname(target), { recursive: true });
 
-					// @ts-expect-error TODO: is this an actual field?
-					if (!file.folder) {
-						const fileContent =
-							file.format === 'BASE64' ? Buffer.from(file.content, 'base64').toString() : file.content;
+					if (!isSourceFolder(file)) {
+						const content = file.content ?? '';
+						const fileContent = file.format === 'BASE64' ? Buffer.from(content, 'base64').toString() : content;
 
 						if (target === join(root, LOCAL_CONFIG_PATH)) {
 							const actorJson = jju.parse(fileContent);

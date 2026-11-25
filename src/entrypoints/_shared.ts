@@ -16,6 +16,7 @@ import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
 import { error } from '../lib/outputs.js';
+import { useProxyFromEnv } from '../lib/proxy.js';
 import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
 
 const cliMetadata = useCLIMetadata();
@@ -133,6 +134,8 @@ async function runVersionCheck(entrypoint: string, maybeCommandName?: string) {
 }
 
 export async function runCLI(entrypoint: string) {
+	useProxyFromEnv();
+
 	// Clean up a legacy multi-bundle install (apify + actor + apify-cli) into the new single-bundle
 	// layout (apify-cli binary + apify/actor wrapper scripts) on the first run after an upgrade.
 	migrateLegacyBundleInstallIfNeeded();

@@ -1,6 +1,6 @@
 import { setTimeout as delay } from 'node:timers/promises';
 
-import type { Actor, ApifyClient, Build } from 'apify-client';
+import type { ActorResource, ApifyClient, Build } from 'apify-client';
 
 import { HTTP_METHODS } from './commands/http-request.js';
 import { resolveActorContext } from './commands/resolve-actor-context.js';
@@ -20,9 +20,9 @@ const OPENAPI_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head'
 
 // apify-client 2.25.0 types omit `standbyUrl`, `actorStandby.tenancy`, the build's web server fields and
 // `buildNumber` on build list items; the API returns all of them.
-type ActorWithServerFields = Actor & {
+type ActorWithServerFields = ActorResource & {
 	standbyUrl?: string | null;
-	actorStandby?: Actor['actorStandby'] & { tenancy?: string };
+	actorStandby?: ActorResource['actorStandby'] & { tenancy?: string };
 };
 
 type ActorDefinitionWithServerFields = NonNullable<Build['actorDefinition']> & {
@@ -38,7 +38,7 @@ export interface ServerActor {
 	tenancy?: string;
 	pricingModel?: string;
 	buildRef?: string;
-	taggedBuilds: Actor['taggedBuilds'];
+	taggedBuilds: ActorResource['taggedBuilds'];
 	standby: NonNullable<ActorWithServerFields['actorStandby']>;
 }
 
@@ -102,7 +102,7 @@ function describeCallerCost(pricingModel: string | undefined): string {
 }
 
 /** Points callers of the input interface to the server interface; dual-mode Actors are legitimate, so it only informs. */
-export function getServerInterfaceHint(actor: Actor, userFriendlyId: string): string | undefined {
+export function getServerInterfaceHint(actor: ActorResource, userFriendlyId: string): string | undefined {
 	if (!actor.actorStandby?.isEnabled) {
 		return undefined;
 	}
@@ -150,7 +150,7 @@ export async function resolveServerActor(client: ApifyClient, target: string | u
 		standbyUrl: actor.standbyUrl,
 		tenancy: actor.actorStandby.tenancy,
 		pricingModel: getEffectivePricingModel(actor.pricingInfos),
-		buildRef: actor.actorStandby.build,
+		buildRef: actor.actorStandby.build ?? undefined,
 		taggedBuilds: actor.taggedBuilds,
 		standby: actor.actorStandby,
 	};

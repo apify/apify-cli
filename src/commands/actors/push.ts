@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyClient, Build } from 'apify-client';
+import type { ActorResource, ActorCollectionCreateOptions, DefaultRunOptions, ApifyClient, Build } from 'apify-client';
 import chalk from 'chalk';
 import { isCI } from 'ci-info';
 import open from 'open';
@@ -811,7 +811,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 
 		let actorId: string;
-		let actor: Actor;
+		let actor: ActorResource;
 		let isActorCreatedNow = false;
 
 		// User can override Actor version and build tag, attributes in localConfig will remain same.
@@ -845,7 +845,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			} else {
 				const { templates } = await fetchManifest();
 				const actorTemplate = templates.find((t) => t.name === actorConfig!.template);
-				const defaultRunOptions = (actorTemplate?.defaultRunOptions || DEFAULT_RUN_OPTIONS) as ActorDefaultRunOptions;
+				const defaultRunOptions = (actorTemplate?.defaultRunOptions || DEFAULT_RUN_OPTIONS) as DefaultRunOptions;
 				const newActor: ActorCollectionCreateOptions = {
 					name: actorConfig!.name as string,
 					title: actorConfig!.title as string | undefined,
@@ -1182,7 +1182,7 @@ Skipping push. Use --force to override.`,
 		let standbyUrl: string | undefined;
 
 		if (outcome.ok && actorConfig!.usesStandbyMode) {
-			const pushedActor = (await actorClient.get()) as (Actor & { standbyUrl?: string | null }) | undefined;
+			const pushedActor = (await actorClient.get()) as (ActorResource & { standbyUrl?: string | null }) | undefined;
 			standbyUrl = pushedActor?.standbyUrl ?? undefined;
 		}
 
