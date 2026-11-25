@@ -33,7 +33,11 @@ import { deleteKvsRecord, writeKvsRecord } from '../lib/kvs-metadata.js';
 import { getAccessToken, OAuthSessionError } from '../lib/oauth/session.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
-import { DEFAULT_LOCAL_SERVER_PORT, watchLocalServerReadiness } from '../lib/server-actor.js';
+import {
+	DEFAULT_LOCAL_SERVER_PORT,
+	resolveLocalServerInterface,
+	watchLocalServerReadiness,
+} from '../lib/server-actor.js';
 import type { AuthJSON } from '../lib/types.js';
 import {
 	Ajv2019,
@@ -135,6 +139,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			description: 'Run with input from a file.',
 			command: 'apify run --input-file ./input.json',
 		},
+		{
+			description: 'Run an Actor that has a server interface through its input interface instead.',
+			command: 'apify run --no-server',
+		},
 	];
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-run';
@@ -186,25 +194,22 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			default: false,
 		}),
 		server: Flags.boolean({
-			aliases: ['standby'],
 			description:
 				'Run the Actor the way the platform starts it for its server interface: sets APIFY_META_ORIGIN=STANDBY ' +
-				'and the web server port, then sends the readiness probe and prints the local URL.',
+				'and the web server port, then sends the readiness probe and prints the local URL.\n' +
+				'An Actor with "usesStandbyMode" in actor.json already runs this way, so the flag is only needed for ' +
+				"an Actor whose actor.json doesn't set it. Use --no-server to run an Actor that does set it through " +
+				'its input interface.',
 			required: false,
-			default: false,
 		}),
 		port: Flags.integer({
-			description: `The port the Actor's web server listens on. Use with --server. Defaults to ${DEFAULT_LOCAL_SERVER_PORT}.`,
+			description: `The port the Actor's web server listens on. Use with the server interface. Defaults to ${DEFAULT_LOCAL_SERVER_PORT}.`,
 			required: false,
 		}),
 	};
 
 	async run() {
 		const cwd = process.cwd();
-
-		if (this.flags.port !== undefined && !this.flags.server) {
-			throw new Error('The --port flag can only be used together with --server.');
-		}
 
 		let authFailure: string | undefined;
 		const auth = await resolveAuth().catch((err): undefined => {
@@ -232,11 +237,22 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const { config: localConfig } = localConfigResult.unwrap();
 
-		if (localConfig!.usesStandbyMode && !this.flags.server) {
+		const { useServerInterface, detectedFromConfig } = resolveLocalServerInterface({
+			serverFlag: this.flags.server,
+			usesStandbyMode: localConfig!.usesStandbyMode,
+		});
+
+		if (this.flags.port !== undefined && !useServerInterface) {
+			throw new Error(
+				'The --port flag applies only when the Actor runs its server interface. Pass --server to run that interface.',
+			);
+		}
+
+		if (detectedFromConfig) {
 			info({
 				message:
-					'This Actor has a server interface ("usesStandbyMode" in actor.json). ' +
-					'Pass --server to run it the way the platform does for HTTP requests.',
+					'Running the server interface because actor.json sets "usesStandbyMode". ' +
+					'To run the input interface instead, use --no-server.',
 			});
 		}
 
@@ -412,7 +428,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const serverPort = this.flags.port ?? DEFAULT_LOCAL_SERVER_PORT;
 
-		if (this.flags.server) {
+		if (useServerInterface) {
 			localEnvVars[APIFY_ENV_VARS.META_ORIGIN] = META_ORIGINS.STANDBY;
 			localEnvVars[ACTOR_ENV_VARS.WEB_SERVER_PORT] = String(serverPort);
 			// The platform still injects the legacy name, and older templates read it.
@@ -443,7 +459,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const readinessProbe = new AbortController();
 
-		if (this.flags.server) {
+		if (useServerInterface) {
 			void watchLocalServerReadiness(serverPort, readinessProbe.signal);
 		}
 

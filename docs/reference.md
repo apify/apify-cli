@@ -489,8 +489,8 @@ FLAGS
                                input, but stops waiting if input is slow to start or
                                pauses.
       --port=<value>           The port the Actor's web
-                               server listens on. Use with --server. Defaults to
-                               4321.
+                               server listens on. Use with the server interface.
+                               Defaults to 4321.
       --profile=<value>        The stored account to use
                                for this command, by name or user ID. See "apify auth
                                list".
@@ -508,6 +508,11 @@ FLAGS
                                APIFY_META_ORIGIN=STANDBY and the web server port,
                                then sends the readiness probe and prints the local
                                URL.
+                               An Actor with "usesStandbyMode" in actor.json already
+                               runs this way, so the flag is only needed for an
+                               Actor whose actor.json doesn't set it. Use
+                               --no-server to run an Actor that does set it through
+                               its input interface.
 ```
 
 ##### `apify validate-schema`
