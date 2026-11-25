@@ -10,6 +10,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { hasGitMetadataSegment } from '../../lib/git-metadata-path.js';
 import { parseGitRepoUrl, withAllowedGitProtocols } from '../../lib/git-repo-url.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
@@ -18,7 +19,16 @@ import { downloadZip, getCurrentUserInfo, getLoggedClientOrThrow } from '../../l
 const extractGitHubZip = async (url: string, directoryPath: string) => {
 	const zipFile = await downloadZip(url);
 
-	zipFile.extractEntryTo(zipFile.getEntries()[0].entryName, directoryPath, false);
+	const entries = zipFile.getEntries();
+	const gitEntry = entries.find((entry) => hasGitMetadataSegment(entry.entryName));
+
+	if (gitEntry) {
+		throw new Error(
+			`Cannot pull Actor: archive entry "${gitEntry.entryName}" would be written to Git metadata in the target directory.`,
+		);
+	}
+
+	zipFile.extractEntryTo(entries[0].entryName, directoryPath, false);
 };
 
 export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
@@ -167,6 +177,12 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 					if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
 						throw new Error(
 							`Cannot pull Actor: source file "${file.name}" would be written outside the target directory.`,
+						);
+					}
+
+					if (hasGitMetadataSegment(rel)) {
+						throw new Error(
+							`Cannot pull Actor: source file "${file.name}" would be written to Git metadata in the target directory.`,
 						);
 					}
 

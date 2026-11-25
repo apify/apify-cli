@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.0](https://github.com/apify/apify-cli/releases/tag/v1.14.0) (2026-11-23)
+
+### 🚀 Features
+
+- Add local Actor runtime (`apify runtime`) ([#1496](https://github.com/apify/apify-cli/pull/1496)) ([3960110](https://github.com/apify/apify-cli/commit/3960110082933d331d39b937fad6ae39660d0496)) by [@Pijukatel](https://github.com/Pijukatel)
+
+### 🐛 Bug Fixes
+
+- **pull:** Validate the Git repository URL before clone ([#1606](https://github.com/apify/apify-cli/pull/1606)) ([53e5255](https://github.com/apify/apify-cli/commit/53e5255ae4d7419562a9cd0e821f685da14dfa5a)) by [@l2ysho](https://github.com/l2ysho)
+- Stop running child processes through a shell ([#1611](https://github.com/apify/apify-cli/pull/1611)) ([923ddb0](https://github.com/apify/apify-cli/commit/923ddb02eb3d1fb5a1485e0bb49742e90b228cb4)) by [@janbuchar](https://github.com/janbuchar)
+- **upgrade:** Run the bundled upgrade.ps1 instead of fetching it from master ([#1612](https://github.com/apify/apify-cli/pull/1612)) ([f51538f](https://github.com/apify/apify-cli/commit/f51538f59e77b961e6de2f08583ea77c8499c2b9)) by [@janbuchar](https://github.com/janbuchar)
+- Align uppercase short flags in help output ([#1562](https://github.com/apify/apify-cli/pull/1562)) ([b17cd86](https://github.com/apify/apify-cli/commit/b17cd86822378897e1fff7fe9bddf85d3e91b6c7)) by [@l2ysho](https://github.com/l2ysho)
+
+
 ## [1.13.0](https://github.com/apify/apify-cli/releases/tag/v1.13.0) (2026-11-18)
 
 ### 🚀 Features

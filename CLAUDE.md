@@ -37,6 +37,10 @@ The CLI is installed globally by many users and in Actors, so keep the npm insta
 - API tests must include `[api]` in the test name and live in `test/api/`.
 - Always `import process from 'node:process'` in command/lib code — never use `globalThis.process`. This is required for test cwd mocks to work.
 
+## GitHub Actions
+
+Workflows reference actions by version tag (`actions/checkout@v7.0.1`), never by commit SHA. [`.github/workflows/actions.lock`](.github/workflows/actions.lock) pins every tag, including those called by composite actions, to its commit. After adding or changing a `uses:` line, run `gh actions-lock` ([extension](https://github.com/github/gh-actions-lock)) and commit the lockfile. Prefer composite actions from `apify/actions` over reusable workflows from `apify/workflows`, which the lockfile can't pin.
+
 ## Pull requests
 
 Keep PR descriptions concise: what changed and why, key numbers, follow-ups. Short bullet points over narration; don't restate the diff or describe the process.
