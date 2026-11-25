@@ -7,6 +7,7 @@ import { testRunCommand } from '../../../src/lib/command-framework/apify-command
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+import { resetCwdCaches } from '../../__setup__/reset-cwd-caches.js';
 
 // Force `useYesNoConfirm` down its non-interactive path, so the prompt errors out instead of blocking on
 // stdin. See src/lib/hooks/user-confirmations/_stdinCheckWrapper.ts.
@@ -161,5 +162,49 @@ describe('apify push on an Actor that does not build from Git', () => {
 		expect(yesNoConfirm).not.toHaveBeenCalled();
 		expect(versionUpdate).toHaveBeenCalledTimes(1);
 		expect(logMessages.error.join('\n')).not.toContain('Git repository');
+	});
+});
+
+describe('apify push and environmentVariables', () => {
+	const writeActorJson = async (extra: Record<string, unknown>) =>
+		writeFile(
+			joinPath(LOCAL_CONFIG_PATH),
+			JSON.stringify({ actorSpecification: 1, name: actName, version: '0.0', buildTag: 'latest', ...extra }),
+		);
+	const sentEnvVars = () => (versionUpdate.mock.calls[0][0 as never] as { envVars?: unknown }).envVars;
+
+	beforeEach(() => {
+		currentVersion = { versionNumber: '0.0', sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES };
+		// Each test writes a different actor.json to the same path, so a cached config must not carry over.
+		resetCwdCaches();
+	});
+
+	it.each([
+		['is absent', {}, false],
+		['is empty', { environmentVariables: {} }, false],
+		[
+			'has only secrets missing under --allow-missing-secrets',
+			{ environmentVariables: { TOKEN: '@missingSecretForPushTest' } },
+			true,
+		],
+	])('sends no envVars when environmentVariables %s', async (_label, extra, allowMissingSecrets) => {
+		await writeActorJson(extra);
+
+		await testRunCommand(ActorsPushCommand, { flags_force: true, flags_allowMissingSecrets: allowMissingSecrets });
+
+		expect(process.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		// The key is on the payload with an undefined value, which the client drops, so the version keeps its env vars.
+		expect(sentEnvVars()).toBeUndefined();
+	});
+
+	it('sends the env vars from a non-empty environmentVariables', async () => {
+		await writeActorJson({ environmentVariables: { A: 'x' } });
+
+		await run(true);
+
+		expect(process.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		expect(sentEnvVars()).toEqual([{ name: 'A', value: 'x' }]);
 	});
 });

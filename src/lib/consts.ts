@@ -22,7 +22,6 @@ export const EMPTY_LOCAL_CONFIG = {
 	name: null,
 	version: '0.0',
 	buildTag: 'latest',
-	environmentVariables: {},
 };
 
 export const CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day

@@ -1002,11 +1002,13 @@ Skipping push. Use --force to override.`,
 		}
 
 		// Update Actor version
-		const envVars = actorConfig!.environmentVariables
+		const resolvedEnvVars = actorConfig!.environmentVariables
 			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>, undefined, {
 					allowMissing: this.flags.allowMissingSecrets,
 				})
 			: undefined;
+		// `envVars: []` would wipe the env vars set in Apify Console, so send none when nothing resolves
+		const envVars = resolvedEnvVars?.length ? resolvedEnvVars : undefined;
 		// The flag wins when passed, then the actor.json field; undefined when neither is set, so the value
 		// stored on the platform is preserved
 		const applyEnvVarsToBuild =

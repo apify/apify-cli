@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import type { GitSourceResult } from '../../../src/lib/git-source/gitSource.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -237,6 +237,9 @@ describe('apify create --source github, successful', () => {
 		const localConfig = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
 		expect(localConfig.name).toBe(actName);
+		// The clone has no actor.json, so this is the default config, copied rather than changed in place.
+		expect(localConfig).not.toHaveProperty('environmentVariables');
+		expect(EMPTY_LOCAL_CONFIG.name).toBeNull();
 	});
 
 	it('reports the remote and the Actor in --json', async () => {

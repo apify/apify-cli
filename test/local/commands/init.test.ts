@@ -8,6 +8,7 @@ import { testRunCommand } from '../../../src/lib/command-framework/apify-command
 import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+import { resetCwdCaches } from '../../__setup__/reset-cwd-caches.js';
 
 const actName = 'init-my-actor';
 const { beforeAllCalls, afterAllCalls, joinPath } = useTempPath(actName, {
@@ -21,6 +22,8 @@ const { InitCommand } = await import('../../../src/commands/init.js');
 
 describe('apify init', () => {
 	beforeEach(async () => {
+		// Every test uses the same path, so a config cached by an earlier test would hide the actor.json on disk.
+		resetCwdCaches();
 		await beforeAllCalls();
 	});
 
@@ -50,9 +53,10 @@ describe('apify init', () => {
 		const apifyJsonPath = 'apify.json';
 		expect(existsSync(joinPath(apifyJsonPath))).toBeFalsy();
 
-		expect(JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'))).toStrictEqual(
-			Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }),
-		);
+		expect(JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'))).toStrictEqual({
+			...EMPTY_LOCAL_CONFIG,
+			name: actName,
+		});
 		expect(
 			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
 		).toStrictEqual({});
@@ -84,10 +88,7 @@ describe('apify init', () => {
 			required: ['url'],
 		};
 
-		const defaultActorJson = Object.assign(EMPTY_LOCAL_CONFIG, {
-			name: actName,
-			input,
-		});
+		const defaultActorJson = { ...EMPTY_LOCAL_CONFIG, name: actName, input };
 
 		await mkdir(joinPath('.actor'), { recursive: true });
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(defaultActorJson, null, '\t'), { flag: 'w' });
@@ -129,7 +130,8 @@ describe('apify init', () => {
 		});
 
 		const config = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
-		expect(config).toStrictEqual(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
+		expect(config).toStrictEqual({ ...EMPTY_LOCAL_CONFIG, name: actName });
 		expect(config.dockerfile).toBeUndefined();
+		expect(config).not.toHaveProperty('environmentVariables');
 	});
 });
