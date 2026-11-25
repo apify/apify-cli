@@ -127,6 +127,8 @@ describe('[api] apify push', () => {
 			expect(pushInstance['telemetryData'].push).to.be.eql({
 				actorId: createdActor!.id,
 				wasCreated: true,
+				envVarsCount: 1,
+				secretRefsCount: 0,
 			});
 		},
 		TEST_TIMEOUT,
@@ -171,6 +173,8 @@ describe('[api] apify push', () => {
 			expect(pushInstance['telemetryData'].push).to.be.eql({
 				actorId: testActor.id,
 				wasCreated: false,
+				envVarsCount: 1,
+				secretRefsCount: 0,
 			});
 		},
 		TEST_TIMEOUT,

@@ -7,6 +7,7 @@ import { testRunCommand } from '../../../src/lib/command-framework/apify-command
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+import { resetCwdCaches } from '../../__setup__/reset-cwd-caches.js';
 
 // Force `useYesNoConfirm` down its non-interactive path, so the prompt errors out instead of blocking on
 // stdin. See src/lib/hooks/user-confirmations/_stdinCheckWrapper.ts.
@@ -161,5 +162,71 @@ describe('apify push on an Actor that does not build from Git', () => {
 		expect(yesNoConfirm).not.toHaveBeenCalled();
 		expect(versionUpdate).toHaveBeenCalledTimes(1);
 		expect(logMessages.error.join('\n')).not.toContain('Git repository');
+	});
+});
+
+describe('apify push telemetry', () => {
+	beforeEach(() => {
+		currentVersion = { versionNumber: '0.0', sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES };
+		// actor.json changes between these tests, so the cached config must not carry over.
+		resetCwdCaches();
+	});
+
+	it('records how many environmentVariables and @secret references actor.json has, next to the Actor', async () => {
+		await writeFile(
+			joinPath(LOCAL_CONFIG_PATH),
+			JSON.stringify({
+				actorSpecification: 1,
+				name: actName,
+				version: '0.0',
+				buildTag: 'latest',
+				environmentVariables: { PLAIN: 's3cr3t-sentinel', TOKEN: '@myToken', OTHER: 'value' },
+			}),
+		);
+
+		const instance = await testRunCommand(ActorsPushCommand, { flags_force: true, flags_allowMissingSecrets: true });
+
+		expect(process.exitCode).toBeFalsy();
+		expect(instance['telemetryData'].push).toEqual({
+			actorId: ACTOR_ID,
+			wasCreated: false,
+			envVarsCount: 3,
+			secretRefsCount: 1,
+		});
+		const telemetry = JSON.stringify(instance['telemetryData']);
+		expect(telemetry).not.toContain('s3cr3t-sentinel');
+		expect(telemetry).not.toContain('PLAIN');
+		expect(telemetry).not.toContain('myToken');
+	});
+
+	it('records the counts when the push fails after reading actor.json', async () => {
+		await writeFile(
+			joinPath(LOCAL_CONFIG_PATH),
+			JSON.stringify({
+				actorSpecification: 1,
+				name: actName,
+				version: '0.0',
+				buildTag: 'latest',
+				dockerContextDir: 42,
+				environmentVariables: { PLAIN: 'value' },
+			}),
+		);
+
+		const instance = await run(true);
+
+		expect(logMessages.error.join('\n')).toContain('"dockerContextDir" in .actor/actor.json must be a string.');
+		expect(versionUpdate).not.toHaveBeenCalled();
+		expect(instance['telemetryData'].push).toEqual({ envVarsCount: 1, secretRefsCount: 0 });
+	});
+
+	it('records zero counts when actor.json has no environmentVariables', async () => {
+		const instance = await run(true);
+
+		expect(instance['telemetryData'].push).toEqual({
+			actorId: ACTOR_ID,
+			wasCreated: false,
+			envVarsCount: 0,
+			secretRefsCount: 0,
+		});
 	});
 });
