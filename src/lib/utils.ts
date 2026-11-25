@@ -14,7 +14,6 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 import { Readable } from 'node:stream';
 import { finished } from 'node:stream/promises';
-import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
@@ -714,7 +713,7 @@ export const outputJobLog = async ({
 		return 'no-logs';
 	}
 
-	const stream = Readable.fromWeb(webStream as NodeReadableStream);
+	const stream = Readable.fromWeb(webStream);
 
 	return new Promise<'no-logs' | 'finished' | 'timeouts'>((resolve, reject) => {
 		let nodeTimeout: NodeJS.Timeout | null = null;
