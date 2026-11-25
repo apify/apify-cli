@@ -76,10 +76,10 @@ describe('[api] apify actors search', () => {
 		expect(parsed.items.length).toBeLessThanOrEqual(2);
 	});
 
+	// The Store API ignores offset when a search query is set, so pagination is tested without one.
 	it('should support pagination with offset', async () => {
 		// Fetch first page
 		await testRunCommand(ActorsSearchCommand, {
-			args_query: 'scraper',
 			flags_json: true,
 			flags_limit: 2,
 			flags_offset: 0,
@@ -88,7 +88,6 @@ describe('[api] apify actors search', () => {
 
 		// Fetch second page
 		await testRunCommand(ActorsSearchCommand, {
-			args_query: 'scraper',
 			flags_json: true,
 			flags_limit: 2,
 			flags_offset: 2,
@@ -194,7 +193,6 @@ describe('[api] apify actors search', () => {
 
 	it('should return valid JSON structure with total and offset in JSON mode', async () => {
 		await testRunCommand(ActorsSearchCommand, {
-			args_query: 'scraper',
 			flags_json: true,
 			flags_limit: 1,
 			flags_offset: 5,
