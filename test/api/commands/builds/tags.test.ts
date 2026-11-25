@@ -17,6 +17,25 @@ useAuthSetup({ perTest: false });
 const { lastLogMessage } = useConsoleSpy();
 
 const TEST_TIMEOUT = 120_000;
+const MAX_BUILD_ATTEMPTS = 3;
+
+// Platform builds can fail for transient reasons (e.g. a registry push rate limit), and only succeeded builds can be tagged.
+async function buildUntilSucceeded(actorId: string): Promise<Build> {
+	let build: Build | undefined;
+
+	for (let attempt = 1; attempt <= MAX_BUILD_ATTEMPTS; attempt++) {
+		const started = await testUserClient.actor(actorId).build('0.0');
+		build = await waitForBuildToFinish(testUserClient, started.id);
+
+		if (build.status === 'SUCCEEDED') {
+			return build;
+		}
+	}
+
+	throw new Error(
+		`Build of Actor ${actorId} did not succeed after ${MAX_BUILD_ATTEMPTS} attempts (last build ${build?.id}: ${build?.status})`,
+	);
+}
 
 describe('[api] apify builds add-tag / remove-tag', () => {
 	let testActor: Actor;
@@ -49,9 +68,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 			],
 		});
 
-		// Build the actor and wait for it to finish
-		const buildStarted = await testUserClient.actor(testActor.id).build('0.0');
-		testBuild = await waitForBuildToFinish(testUserClient, buildStarted.id);
+		testBuild = await buildUntilSucceeded(testActor.id);
 	}, TEST_TIMEOUT);
 
 	afterAll(async () => {
@@ -109,8 +126,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				});
 
 				// Create another build
-				const buildStarted2 = await testUserClient.actor(testActor.id).build('0.0');
-				const testBuild2 = await waitForBuildToFinish(testUserClient, buildStarted2.id);
+				const testBuild2 = await buildUntilSucceeded(testActor.id);
 
 				// Reassign the tag to the new build
 				await testRunCommand(BuildsAddTagCommand, {
@@ -168,8 +184,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 			'should show error when tag points to a different build',
 			async () => {
 				// Create another build and tag it
-				const buildStarted2 = await testUserClient.actor(testActor.id).build('0.0');
-				const testBuild2 = await waitForBuildToFinish(testUserClient, buildStarted2.id);
+				const testBuild2 = await buildUntilSucceeded(testActor.id);
 
 				await testRunCommand(BuildsAddTagCommand, {
 					flags_build: testBuild2.id,
