@@ -54,6 +54,7 @@ import {
 	createSourceFiles,
 	getActorLocalFilePaths,
 	getCurrentUserInfo,
+	AccountDetailsForbiddenError,
 	getLoggedClientOrThrow,
 	outputJobLog,
 	parseWaitForFinishMillis,
@@ -806,7 +807,15 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const apifyClient = await getLoggedClientOrThrow();
 		const contextToRuntime = Boolean(actorPath) && mayTargetActorRuntime(apifyClient);
-		const userInfo = await getCurrentUserInfo();
+		const userInfo = await getCurrentUserInfo().catch((err) => {
+			if (err instanceof AccountDetailsForbiddenError) {
+				throw new Error(
+					"Your API token can't read your account details, so it most likely has limited permissions, and those tokens can't create or modify Actors. Use a token without limited permissions.",
+					{ cause: err },
+				);
+			}
+			throw err;
+		});
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 

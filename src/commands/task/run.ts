@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { finalizeRun } from '../../lib/commands/run-result.js';
-import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getCurrentUsernameOrId, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override name = 'run' as const;
@@ -41,10 +41,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 
 	async run() {
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getCurrentUserInfo();
-		const usernameOrId = userInfo.username || (userInfo.id as string);
-
-		const { id: taskId, userFriendlyId, title } = await this.resolveTaskId(apifyClient, usernameOrId);
+		const { id: taskId, userFriendlyId, title } = await this.resolveTaskId(apifyClient);
 
 		const runOpts: TaskStartOptions = {
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
@@ -84,7 +81,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 		await finalizeRun({ apifyClient, run, operation: 'task-run', json: this.flags.json });
 	}
 
-	private async resolveTaskId(client: ApifyClient, usernameOrId: string) {
+	private async resolveTaskId(client: ApifyClient) {
 		const { taskId } = this.args;
 
 		// Full ID
@@ -96,7 +93,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 
 			return {
 				id: task.id,
-				userFriendlyId: `${usernameOrId}/${task.name}`,
+				userFriendlyId: taskId,
 				title: task.title,
 				task,
 			};
@@ -104,6 +101,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 
 		// Try fetching task directly by name
 		if (taskId) {
+			const usernameOrId = await getCurrentUsernameOrId();
 			const task = await client.task(`${usernameOrId}/${taskId.toLowerCase()}`).get();
 
 			if (!task) {

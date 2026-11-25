@@ -78,7 +78,8 @@ export function describeTenancy(
 	viewerUsername: string | undefined,
 ): string {
 	if (!isMultiTenant(actor)) {
-		return `single-tenant (runs in your account "${viewerUsername}", which pays the platform usage)`;
+		const account = viewerUsername ? `your account "${viewerUsername}"` : 'your account';
+		return `single-tenant (runs in ${account}, which pays the platform usage)`;
 	}
 
 	if (viewerUsername === actor.ownerUsername) {

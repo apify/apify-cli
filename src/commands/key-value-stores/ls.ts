@@ -5,7 +5,12 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
-import { getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import {
+	getCurrentUsernameForDisplay,
+	getLoggedClientOrThrow,
+	printJsonToStdout,
+	TimestampFormatter,
+} from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Store ID', 'Name', 'Size', 'Created', 'Modified'],
@@ -57,7 +62,7 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 		const { desc, offset, limit, json, unnamed } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
-		const user = await getCurrentUserInfo();
+		const username = await getCurrentUsernameForDisplay();
 
 		const rawKvsList = await client.keyValueStores().list({ desc, offset, limit, unnamed });
 
@@ -84,7 +89,7 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 				'Store ID': store.id,
 				Created: TimestampFormatter.display(store.createdAt),
 				Modified: TimestampFormatter.display(store.modifiedAt),
-				Name: store.name ? `${user.username!}/${store.name}` : '',
+				Name: store.name ? [username, store.name].filter(Boolean).join('/') : '',
 				Size:
 					typeof size === 'number'
 						? prettyPrintBytes({ bytes: size, shortBytes: true, colorFunc: chalk.gray, precision: 0 })

@@ -2,7 +2,7 @@ import process from 'node:process';
 
 import type { ApifyClient } from 'apify-client';
 
-import { getLocalConfig, getCurrentUserInfo } from '../utils.js';
+import { getCurrentUsernameOrId, getLocalConfig } from '../utils.js';
 
 /**
  * Tries to resolve what actor the command ran points to. If an actor id is provided via command line, attempt to resolve it,
@@ -17,8 +17,6 @@ export async function resolveActorContext({
 	providedActorNameOrId: string | undefined;
 	client: ApifyClient;
 }) {
-	const userInfo = await getCurrentUserInfo();
-	const usernameOrId = userInfo.username || (userInfo.id as string);
 	const localConfig = getLocalConfig(process.cwd()) || {};
 
 	// Full ID
@@ -50,7 +48,9 @@ export async function resolveActorContext({
 			};
 		}
 
-		const actorByName = await client.actor(`${usernameOrId}/${providedActorNameOrId.toLowerCase()}`).get();
+		const actorByName = await client
+			.actor(`${await getCurrentUsernameOrId()}/${providedActorNameOrId.toLowerCase()}`)
+			.get();
 
 		if (actorByName) {
 			return {
@@ -67,7 +67,7 @@ export async function resolveActorContext({
 	}
 
 	if (localConfig.name) {
-		const actor = await client.actor(`${usernameOrId}/${localConfig.name}`).get();
+		const actor = await client.actor(`${await getCurrentUsernameOrId()}/${localConfig.name}`).get();
 
 		if (!actor) {
 			return {
