@@ -104,9 +104,12 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 			message.push(`  ${chalk.yellow('Docker Image Size')}: ${prettyPrintBytes({ bytes: dockerImageSize })}`);
 		}
 
-		// Missing when the user can neither write to nor build the Actor
-		if (build.meta) {
-			message.push(`  ${chalk.yellow('Origin')}: ${build.meta.origin ?? 'UNKNOWN'}`);
+		// A reduced build (see `isReducedBuild`) has an empty `meta`, so there's no origin to print.
+		// Optional chaining also covers `meta` missing entirely.
+		const origin = (build.meta as Partial<typeof build.meta> | undefined)?.origin;
+
+		if (origin) {
+			message.push(`  ${chalk.yellow('Origin')}: ${origin}`);
 		}
 
 		message.push('');

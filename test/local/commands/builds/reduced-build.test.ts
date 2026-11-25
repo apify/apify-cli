@@ -25,7 +25,9 @@ useAuthSetup();
 const { logMessages } = useConsoleSpy();
 
 // What the API returns to users who can read the Actor but can neither write to it nor build it.
+// `meta` stays, but empty.
 const reducedBuild = {
+	meta: {},
 	id: 'buildId',
 	actId: 'actorId',
 	buildNumber: '1.0.30',
@@ -36,6 +38,7 @@ const reducedBuild = {
 
 const fullBuild = {
 	...reducedBuild,
+	userId: 'userId',
 	meta: { origin: 'CLI' },
 	stats: { durationMillis: 65_000, computeUnits: 0.0123, imageSizeBytes: 1024 * 1024 },
 };
@@ -108,6 +111,15 @@ describe('builds commands with a reduced build', () => {
 
 		expect(errors).toContain(`You don't have access to the log of build with ID "buildId".`);
 		expect(errors).not.toContain('was not found');
+	});
+
+	it('builds log treats a build without any meta as reduced too', async () => {
+		const { meta: _meta, ...buildWithoutMeta } = reducedBuild;
+		mockGetLoggedClientOrThrow.mockResolvedValue(fakeClient({ build: buildWithoutMeta }));
+
+		await testRunCommand(BuildsLogCommand, { args_buildId: 'buildId' });
+
+		expect(logMessages.error.join('\n')).toContain("You don't have access to the log");
 	});
 
 	it('builds log stays quiet when a full build has no log', async () => {
