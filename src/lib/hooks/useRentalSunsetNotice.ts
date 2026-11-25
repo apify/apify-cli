@@ -111,7 +111,7 @@ async function fetchRentalActorCount(username: string) {
 
 	try {
 		// axios rather than `fetch`, so the lookup honors HTTP_PROXY/HTTPS_PROXY/NO_PROXY like every
-		// other request the CLI makes - Node's global fetch ignores them.
+		// other request the CLI makes - Node's global fetch ignores them before 24.14.
 		const { data } = await axios.get<{ data?: { total?: number } }>(url.href, {
 			params: {
 				username,
