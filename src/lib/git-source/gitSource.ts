@@ -111,7 +111,7 @@ export interface GitAccount {
 export const toGitAccount = ({ id, username, organizationOwnerUserId }: AuthJSON): GitAccount => ({
 	id,
 	username,
-	organizationOwnerUserId,
+	organizationOwnerUserId: organizationOwnerUserId ?? undefined,
 });
 
 /**

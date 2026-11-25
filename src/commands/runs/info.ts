@@ -1,4 +1,4 @@
-import type { ActorRun, ActorRunUsage, ActorTaggedBuild } from 'apify-client';
+import type { Run, RunUsage, TaggedBuildInfo } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -25,7 +25,7 @@ const usageTable = new ResponsiveTable({
 	},
 });
 
-const usageMapping: Record<string, keyof ActorRunUsage> = {
+const usageMapping: Record<string, keyof RunUsage> = {
 	'Actor compute units': 'ACTOR_COMPUTE_UNITS',
 	'Dataset reads': 'DATASET_READS',
 	'Dataset writes': 'DATASET_WRITES',
@@ -179,7 +179,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 		if (run.finishedAt) {
 			message.push(
-				`${chalk.yellow('Finished')}: ${TimestampFormatter.display(run.finishedAt)} (took ${chalk.gray(ShortDurationFormatter.format(run.stats.durationMillis))})`,
+				`${chalk.yellow('Finished')}: ${TimestampFormatter.display(run.finishedAt)} (took ${chalk.gray(ShortDurationFormatter.format(run.stats.durationMillis ?? 0))})`,
 			);
 		} else {
 			const diff = Date.now() - run.startedAt.getTime();
@@ -209,11 +209,11 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		// build
 		if (actor) {
 			// Compute detailed view
-			const expectedActorVersion = run.buildNumber.split('.').slice(0, 2).join('.');
+			const expectedActorVersion = run.buildNumber?.split('.').slice(0, 2).join('.');
 
 			const actorVersion = actor.versions.find((item) => item.versionNumber === expectedActorVersion);
 
-			const runVersionTaggedAs = Object.entries((actor.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>).find(
+			const runVersionTaggedAs = Object.entries((actor.taggedBuilds ?? {}) as Record<string, TaggedBuildInfo>).find(
 				([, data]) => data.buildNumber === run.buildNumber,
 			)?.[0];
 
@@ -248,13 +248,13 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		// CPU avg/max
 
 		message.push(
-			`${chalk.yellow('CPU')}: ${chalk.gray('Average:')} ${run.stats.cpuAvgUsage.toFixed(2)}% | ${chalk.gray('Maximum:')} ${run.stats.cpuMaxUsage.toFixed(2)}%`,
+			`${chalk.yellow('CPU')}: ${chalk.gray('Average:')} ${(run.stats.cpuAvgUsage ?? 0).toFixed(2)}% | ${chalk.gray('Maximum:')} ${(run.stats.cpuMaxUsage ?? 0).toFixed(2)}%`,
 		);
 
 		// memory avg/max
 
 		message.push(
-			`${chalk.yellow('Memory')}: ${chalk.gray('Average:')} ${prettyPrintBytes({ bytes: run.stats.memAvgBytes, shortBytes: true })} | ${chalk.gray('Maximum:')} ${prettyPrintBytes({ bytes: run.stats.memMaxBytes, shortBytes: true })}`,
+			`${chalk.yellow('Memory')}: ${chalk.gray('Average:')} ${prettyPrintBytes({ bytes: run.stats.memAvgBytes ?? 0, shortBytes: true })} | ${chalk.gray('Maximum:')} ${prettyPrintBytes({ bytes: run.stats.memMaxBytes ?? 0, shortBytes: true })}`,
 		);
 
 		// url
@@ -272,7 +272,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		simpleLog({ message: message.join('\n'), stdout: true });
 	}
 
-	private addDetailedUsage(run: ActorRun) {
+	private addDetailedUsage(run: Run) {
 		const { usage, usageUsd } = run;
 
 		if (!usage || !usageUsd) {

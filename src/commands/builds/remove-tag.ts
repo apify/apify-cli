@@ -1,4 +1,4 @@
-import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
+import type { TaggedBuildInfo, ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -60,7 +60,7 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 			return;
 		}
 
-		const existingTaggedBuilds = (actor.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>;
+		const existingTaggedBuilds = (actor.taggedBuilds ?? {}) as Record<string, TaggedBuildInfo>;
 		const existingTagData = existingTaggedBuilds[tag];
 
 		// Check if the tag exists

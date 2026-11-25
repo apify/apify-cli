@@ -1,12 +1,9 @@
 import process from 'node:process';
 
-import type { ApifyClientOptions } from 'apify-client';
-import axios from 'axios';
+import type { FetchFunction } from 'apify-client';
 
 import { findRunningRuntimeEngine, runtimeApiUrl } from './docker.js';
 import { configuredRuntimePorts, isConnectedToActorRuntime } from './target.js';
-
-type RequestInterceptor = NonNullable<ApifyClientOptions['requestInterceptors']>[number];
 
 export class ActorRuntimeNotRunningError extends Error {
 	constructor(port: number) {
@@ -29,19 +26,16 @@ export function targetsConnectedRuntime(baseUrl: string | undefined, env: NodeJS
  * Runs on every attempt of every request to the connected runtime. A refused connection triggers one
  * engine status check: a stopped container means a plain error, which apify-client doesn't retry, so
  * the command fails at once instead of after eight backoffs. A running container (still booting, or
- * under load) rethrows the original axios error and keeps the client's normal retry policy.
+ * under load) rethrows the original fetch error and keeps the client's normal retry policy.
  */
-export const runtimeDownInterceptor: RequestInterceptor = (config) => {
-	const send = axios.getAdapter((config.adapter ?? axios.defaults.adapter) as never);
-	config.adapter = async (requestConfig) => {
-		try {
-			return await send(requestConfig);
-		} catch (err) {
-			if ((err as { code?: string }).code === 'ECONNREFUSED' && !(await findRunningRuntimeEngine())) {
-				throw new ActorRuntimeNotRunningError(configuredRuntimePorts().api);
-			}
-			throw err;
+export const runtimeDownFetch: FetchFunction = async (input, init) => {
+	try {
+		return await fetch(input, init);
+	} catch (err) {
+		const code = ((err as Error).cause as { code?: string } | undefined)?.code;
+		if (code === 'ECONNREFUSED' && !(await findRunningRuntimeEngine())) {
+			throw new ActorRuntimeNotRunningError(configuredRuntimePorts().api);
 		}
-	};
-	return config;
+		throw err;
+	}
 };

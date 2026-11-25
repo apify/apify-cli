@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import type { Actor, ApifyClient, Build } from 'apify-client';
+import type { ActorResource, ApifyClient, Build } from 'apify-client';
 
 import type { ServerActor } from '../../../src/lib/server-actor.js';
 import {
@@ -262,13 +262,13 @@ describe('server-actor', () => {
 
 	describe('getServerInterfaceHint()', () => {
 		it('points to apify server request for an Actor with a server interface', () => {
-			const actor = { actorStandby: { isEnabled: true } } as Actor;
+			const actor = { actorStandby: { isEnabled: true } } as ActorResource;
 
 			expect(getServerInterfaceHint(actor, 'apify/web-fetch')).toContain('apify server request apify/web-fetch');
 		});
 
 		it('gives no hint for an Actor without one', () => {
-			expect(getServerInterfaceHint({} as Actor, 'apify/hello-world')).toBeUndefined();
+			expect(getServerInterfaceHint({} as ActorResource, 'apify/hello-world')).toBeUndefined();
 		});
 	});
 

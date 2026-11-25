@@ -1,4 +1,4 @@
-import type { ActorTaggedBuild } from 'apify-client';
+import type { TaggedBuildInfo } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -58,7 +58,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 
 		if (actor?.taggedBuilds) {
 			// If this build is tagged in the actor, console asks you to write the tag.
-			for (const [tag, buildData] of Object.entries(actor.taggedBuilds) as [string, ActorTaggedBuild][]) {
+			for (const [tag, buildData] of Object.entries(actor.taggedBuilds) as [string, TaggedBuildInfo][]) {
 				if (buildId === buildData.buildId) {
 					confirmationPrompt = tag;
 					break;

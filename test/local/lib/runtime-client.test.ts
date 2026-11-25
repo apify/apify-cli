@@ -1,14 +1,8 @@
 import { createServer } from 'node:net';
 import process from 'node:process';
 
-import { ApifyClient } from 'apify-client';
-
-import { getAnonymousApifyClientOptions } from '../../../src/lib/auth.js';
-import {
-	ActorRuntimeNotRunningError,
-	runtimeDownInterceptor,
-	targetsConnectedRuntime,
-} from '../../../src/lib/runtime/client.js';
+import { createApifyClient, getAnonymousApifyClientOptions } from '../../../src/lib/auth.js';
+import { ActorRuntimeNotRunningError, targetsConnectedRuntime } from '../../../src/lib/runtime/client.js';
 import { updateActorRuntimeConfig } from '../../../src/lib/runtime/config.js';
 import * as docker from '../../../src/lib/runtime/docker.js';
 import { setConnectedToActorRuntime } from '../../../src/lib/runtime/target.js';
@@ -56,29 +50,21 @@ describe('runtime/client', () => {
 		});
 	});
 
-	describe('getAnonymousApifyClientOptions()', () => {
-		it('adds the runtime interceptor only while connected', () => {
-			expect(getAnonymousApifyClientOptions().requestInterceptors).toHaveLength(1);
+	describe('createApifyClient()', () => {
+		it('checks the runtime engine only while connected', async () => {
+			const baseUrl = `http://localhost:${await freePort()}`;
+			const client = createApifyClient({ ...getAnonymousApifyClientOptions(baseUrl), maxRetries: 0 });
 
-			setConnectedToActorRuntime(true);
-			expect(getAnonymousApifyClientOptions().requestInterceptors).toContain(runtimeDownInterceptor);
-			expect(getAnonymousApifyClientOptions('http://localhost:3333').requestInterceptors).toContain(
-				runtimeDownInterceptor,
-			);
-			expect(getAnonymousApifyClientOptions('https://api.apify.com').requestInterceptors).toHaveLength(1);
-
-			process.env.APIFY_CLIENT_BASE_URL = 'http://localhost:9999';
-			expect(getAnonymousApifyClientOptions().requestInterceptors).toHaveLength(1);
+			await expect(client.user('me').get()).rejects.toMatchObject({ cause: { code: 'ECONNREFUSED' } });
+			expect(findRunningRuntimeEngine).not.toHaveBeenCalled();
 		});
-	});
 
-	describe('runtimeDownInterceptor', () => {
 		it('fails at once when the connection is refused and the runtime container is not running', async () => {
 			setConnectedToActorRuntime(true);
 			updateActorRuntimeConfig({ apiPort: await freePort() });
 			findRunningRuntimeEngine.mockResolvedValue(null);
 
-			const client = new ApifyClient({ ...getAnonymousApifyClientOptions(), token: 'local-dev-token' });
+			const client = createApifyClient({ ...getAnonymousApifyClientOptions(), token: 'local-dev-token' });
 
 			const started = Date.now();
 			await expect(client.user('me').get()).rejects.toBeInstanceOf(ActorRuntimeNotRunningError);
@@ -91,14 +77,14 @@ describe('runtime/client', () => {
 			updateActorRuntimeConfig({ apiPort: await freePort() });
 			findRunningRuntimeEngine.mockResolvedValue('docker');
 
-			const client = new ApifyClient({
+			const client = createApifyClient({
 				...getAnonymousApifyClientOptions(),
 				token: 'local-dev-token',
 				maxRetries: 2,
 				minDelayBetweenRetriesMillis: 10,
 			});
 
-			await expect(client.user('me').get()).rejects.toMatchObject({ code: 'ECONNREFUSED' });
+			await expect(client.user('me').get()).rejects.toMatchObject({ cause: { code: 'ECONNREFUSED' } });
 			expect(findRunningRuntimeEngine).toHaveBeenCalledTimes(3);
 		});
 	});

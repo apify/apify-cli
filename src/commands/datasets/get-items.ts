@@ -1,4 +1,4 @@
-import { type ApifyClient, type Dataset, type DatasetClient, DownloadItemsFormat } from 'apify-client';
+import { type ApifyClient, type DatasetResource, type DatasetClient, DownloadItemsFormat } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -95,7 +95,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 	private async tryToGetDataset(
 		client: ApifyClient,
 		datasetId: string,
-	): Promise<{ dataset: Dataset | undefined; datasetClient: DatasetClient } | null> {
+	): Promise<{ dataset: DatasetResource | undefined; datasetClient: DatasetClient } | null> {
 		const byIdOrName = await client
 			.dataset(datasetId)
 			.get()

@@ -1,4 +1,4 @@
-import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
+import type { Run, ApifyClient, TaskStartOptions } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -55,14 +55,14 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 		}
 
 		if (this.flags.timeout !== undefined) {
-			runOpts.timeout = this.flags.timeout;
+			runOpts.runTimeoutSecs = this.flags.timeout;
 		}
 
 		if (this.flags.memory) {
 			runOpts.memory = this.flags.memory;
 		}
 
-		let run!: ActorRun;
+		let run!: Run;
 
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
@@ -97,7 +97,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			return {
 				id: task.id,
 				userFriendlyId: `${usernameOrId}/${task.name}`,
-				title: task.title,
+				title: task.title ?? undefined,
 				task,
 			};
 		}
@@ -113,7 +113,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			return {
 				id: task.id,
 				userFriendlyId: `${usernameOrId}/${task.name}`,
-				title: task.title,
+				title: task.title ?? undefined,
 				task,
 			};
 		}

@@ -1,4 +1,4 @@
-import type { ActorRun, ApifyClient, Build } from 'apify-client';
+import type { Run, ApifyClient, Build } from 'apify-client';
 import chalk from 'chalk';
 
 import { ACTOR_JOB_STATUSES, ACTOR_JOB_TERMINAL_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
@@ -47,7 +47,7 @@ export interface WaitForJobOptions {
 	maxWaitMillis?: number;
 }
 
-export interface WaitForJobResult<T extends Build | ActorRun = Build | ActorRun> {
+export interface WaitForJobResult<T extends Build | Run = Build | Run> {
 	job: T;
 	/**
 	 * True when the wait gave up because `maxWaitMillis` elapsed before the job reached a terminal
@@ -59,7 +59,7 @@ export interface WaitForJobResult<T extends Build | ActorRun = Build | ActorRun>
 
 interface JobTypeMap {
 	BUILD: Build;
-	RUN: ActorRun;
+	RUN: Run;
 }
 
 export async function waitForTerminalStatus<K extends JobType>(

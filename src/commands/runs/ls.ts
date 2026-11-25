@@ -148,7 +148,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 				Usage: chalk.cyan(`$${(run.usageTotalUsd ?? 0).toFixed(3)}`),
 				'Started At': MultilineTimestampFormatter.display(run.startedAt),
 				Took: tookString,
-				'Build No.': run.buildNumber,
+				'Build No.': run.buildNumber ?? chalk.gray('N/A'),
 				Origin: run.meta.origin ?? 'UNKNOWN',
 			});
 		}

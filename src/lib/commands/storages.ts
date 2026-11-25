@@ -1,13 +1,19 @@
-import type { ApifyClient, Dataset, DatasetClient, KeyValueStore, KeyValueStoreClient } from 'apify-client';
+import type {
+	ApifyClient,
+	DatasetResource,
+	DatasetClient,
+	KeyValueStoreResource,
+	KeyValueStoreClient,
+} from 'apify-client';
 
 import { getCurrentUserInfo } from '../utils.js';
 
 type ReturnTypeForStorage<T extends 'dataset' | 'keyValueStore'> = T extends 'dataset'
 	? {
-			dataset: Dataset;
+			dataset: DatasetResource;
 			datasetClient: DatasetClient;
 		}
-	: { keyValueStore: KeyValueStore; keyValueStoreClient: KeyValueStoreClient };
+	: { keyValueStore: KeyValueStoreResource; keyValueStoreClient: KeyValueStoreClient };
 
 async function tryToGetStorage<T extends 'dataset' | 'keyValueStore'>(
 	client: ApifyClient,
@@ -44,13 +50,13 @@ async function tryToGetStorage<T extends 'dataset' | 'keyValueStore'>(
 export async function tryToGetDataset(
 	client: ApifyClient,
 	datasetId: string,
-): Promise<{ dataset: Dataset; datasetClient: DatasetClient } | null> {
+): Promise<{ dataset: DatasetResource; datasetClient: DatasetClient } | null> {
 	return tryToGetStorage(client, datasetId, 'dataset');
 }
 
 export async function tryToGetKeyValueStore(
 	client: ApifyClient,
 	keyValueStoreId: string,
-): Promise<{ keyValueStore: KeyValueStore; keyValueStoreClient: KeyValueStoreClient } | null> {
+): Promise<{ keyValueStore: KeyValueStoreResource; keyValueStoreClient: KeyValueStoreClient } | null> {
 	return tryToGetStorage(client, keyValueStoreId, 'keyValueStore');
 }

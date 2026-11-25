@@ -1,4 +1,12 @@
-import type { Actor, ActorChargeEvent, ActorTaggedBuild, ApifyApiError, ApifyClient, Build, User } from 'apify-client';
+import type {
+	ActorResource,
+	ActorChargeEvent,
+	TaggedBuildInfo,
+	ApifyApiError,
+	ApifyClient,
+	Build,
+	UserPrivateInfo,
+} from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -9,9 +17,9 @@ import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-tabl
 import { error, simpleLog } from '../../lib/outputs.js';
 import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
-interface HydratedActorInfo extends Omit<Actor, 'taggedBuilds'> {
-	taggedBuilds?: Record<string, ActorTaggedBuild & { build?: Build }>;
-	actorMaker?: User;
+interface HydratedActorInfo extends Omit<ActorResource, 'taggedBuilds'> {
+	taggedBuilds?: Record<string, TaggedBuildInfo & { build?: Build }>;
+	actorMaker?: UserPrivateInfo;
 }
 
 // apify-client's ActorChargeEvent declares eventPriceUsd as required and is missing
@@ -188,7 +196,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		if (actorInfo.actorMaker) {
 			message.push(
 				'',
-				`${chalk.yellow('Made by:')} ${chalk.cyan(actorInfo.actorMaker.profile.name ?? actorInfo.actorMaker.username)}`,
+				`${chalk.yellow('Made by:')} ${chalk.cyan(actorInfo.actorMaker.profile?.name ?? actorInfo.actorMaker.username)}`,
 			);
 
 			// Missing types who?
@@ -230,7 +238,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 					break;
 				}
 				case 'PRICE_PER_DATASET_ITEM': {
-					const pricePerOneKItems = latestPricingInfo.pricePerUnitUsd * 1000;
+					const pricePerOneKItems = (latestPricingInfo.pricePerUnitUsd ?? 0) * 1000;
 
 					message.push(
 						`${chalk.yellow('Pricing information:')} ${chalk.bgGray(`$${pricePerOneKItems.toFixed(2)} / 1,000 results`)}`,

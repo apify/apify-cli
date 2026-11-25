@@ -1,4 +1,4 @@
-import type { Actor, Build } from 'apify-client';
+import type { ActorResource, Build } from 'apify-client';
 
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { waitForBuildToFinish } from '../../../__setup__/build-utils.js';
@@ -19,7 +19,7 @@ const { lastLogMessage } = useConsoleSpy();
 const TEST_TIMEOUT = 120_000;
 
 describe('[api] apify builds add-tag / remove-tag', () => {
-	let testActor: Actor;
+	let testActor: ActorResource;
 	let testBuild: Build;
 
 	beforeAll(async () => {

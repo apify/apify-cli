@@ -58,7 +58,7 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 
 		const [user, actor, run] = await Promise.all([
 			apifyClient
-				.user(info.userId)
+				.user(info.userId ?? undefined)
 				.get()
 				.then((u) => u!),
 			info.actId ? apifyClient.actor(info.actId).get() : Promise.resolve(undefined),

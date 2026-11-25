@@ -5,11 +5,10 @@ import type { MemoryStorageOptions } from '@crawlee/memory-storage';
 import { MemoryStorage } from '@crawlee/memory-storage';
 import type { StorageClient } from '@crawlee/types';
 import type { ApifyClientOptions } from 'apify-client';
-import { ApifyClient } from 'apify-client';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
 
-import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth } from './auth.js';
+import { createApifyClient, describeAuthFailure, getApifyClientOptionsForToken, resolveAuth } from './auth.js';
 import { getLocalStorageDir } from './utils.js';
 
 export const APIFY_STORAGE_TYPES = {
@@ -40,10 +39,11 @@ export const getApifyStorageClient = async (
 		throw new Error(describeAuthFailure(auth));
 	}
 
-	return new ApifyClient({
+	// crawlee types StorageClient against the apify-client v2 models, which v3 only makes more nullable.
+	return createApifyClient({
 		...getApifyClientOptionsForToken(auth.token),
 		...options,
-	});
+	}) as unknown as StorageClient;
 };
 
 /**

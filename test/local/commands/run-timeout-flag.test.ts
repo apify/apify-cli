@@ -100,18 +100,18 @@ describe.each(commands)('$name --timeout', ({ command, args }) => {
 	it('sends --timeout 0 as a zero timeout (no timeout), not as an omitted option', async () => {
 		await testRunCommand(command as never, { ...args, flags_timeout: 0 } as never);
 
-		expect(sentRunOptions()).toMatchObject({ timeout: 0 });
+		expect(sentRunOptions()).toMatchObject({ runTimeoutSecs: 0 });
 	});
 
 	it('sends a positive --timeout as is', async () => {
 		await testRunCommand(command as never, { ...args, flags_timeout: 120 } as never);
 
-		expect(sentRunOptions()).toMatchObject({ timeout: 120 });
+		expect(sentRunOptions()).toMatchObject({ runTimeoutSecs: 120 });
 	});
 
 	it("leaves the timeout to the Actor's default when the flag is omitted", async () => {
 		await testRunCommand(command as never, { ...args } as never);
 
-		expect(sentRunOptions()).not.toHaveProperty('timeout');
+		expect(sentRunOptions()).not.toHaveProperty('runTimeoutSecs');
 	});
 });

@@ -1,4 +1,4 @@
-import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
+import type { TaggedBuildInfo, ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -67,7 +67,7 @@ export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand
 		}
 
 		// Check if this tag already points to the same build
-		const existingTaggedBuilds = (actor.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>;
+		const existingTaggedBuilds = (actor.taggedBuilds ?? {}) as Record<string, TaggedBuildInfo>;
 		const existingTagData = existingTaggedBuilds[tag];
 
 		if (existingTagData?.buildId === buildId) {

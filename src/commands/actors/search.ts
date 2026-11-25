@@ -1,7 +1,6 @@
-import { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
-import { getAnonymousApifyClientOptions } from '../../lib/auth.js';
+import { createApifyClient, getAnonymousApifyClientOptions } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -23,7 +22,7 @@ function formatPricingModel(model?: string): string {
 	return pricingModelLabels[model] ?? model;
 }
 
-function truncateDescription(description?: string, maxLength = 60): string {
+function truncateDescription(description?: string | null, maxLength = 60): string {
 	if (!description) return '';
 
 	if (description.length <= maxLength) return description;
@@ -97,7 +96,7 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 		const { query } = this.args;
 		const { json, sortBy, category, username, pricingModel, limit, offset } = this.flags;
 
-		const client = new ApifyClient(getAnonymousApifyClientOptions());
+		const client = createApifyClient(getAnonymousApifyClientOptions());
 
 		let result;
 

@@ -57,7 +57,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 
 		if (actor?.taggedBuilds) {
 			for (const [tag, buildData] of Object.entries(actor.taggedBuilds)) {
-				if (buildData.buildId === build.id) {
+				if (buildData?.buildId === build.id) {
 					buildTag = tag;
 					break;
 				}

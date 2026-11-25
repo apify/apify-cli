@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import type { ActorRun, ActorStartOptions } from 'apify-client';
+import type { Run, ActorStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
@@ -102,7 +102,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		}
 
 		if (this.flags.timeout !== undefined) {
-			runOpts.timeout = this.flags.timeout;
+			runOpts.runTimeoutSecs = this.flags.timeout;
 		}
 
 		if (this.flags.memory) {
@@ -129,7 +129,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			printRunLogs: false,
 		});
 
-		let run: ActorRun | undefined;
+		let run: Run | undefined;
 
 		for await (const yieldedRun of iterator) {
 			run = yieldedRun;
