@@ -2,6 +2,7 @@ import { USER_AGENT } from '../../../entrypoints/_shared.js';
 import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 import type { InstallMethod } from '../useCLIMetadata.js';
 import { useCLIMetadata } from '../useCLIMetadata.js';
+import { maskCredentialsDeep } from './credentialsInText.js';
 import { useTelemetryEnabled } from './useTelemetryEnabled.js';
 import { useTelemetryIdentifiers } from './useTelemetryIdentifiers.js';
 
@@ -124,10 +125,11 @@ export async function sendEvent<Event extends keyof TrackEventMap>(
 				channel: 'server',
 			},
 			event,
-			properties: {
+			// The last line of defence: no event leaves with a recognisable credential, whatever built it.
+			properties: maskCredentialsDeep({
 				...eventData,
 				app: 'cli',
-			},
+			}),
 			timestamp: new Date().toISOString(),
 			userId: identifiers.userId,
 

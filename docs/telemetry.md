@@ -42,3 +42,5 @@ Alternatively, set the `APIFY_CLI_DISABLE_TELEMETRY` environment variable to `1`
 - The same random ID and Apify user ID as other events.
 
 The CLI sends feedback even when telemetry is turned off, because you explicitly asked it to. Don't include personal data, credentials, or secrets.
+
+The CLI doesn't send feedback that contains an API token, a password, or another secret it recognizes. It checks for Apify tokens, for values passed to something named like a credential (such as `--token` or `password:`), and for the tokens stored on your machine. Replace the secret with a placeholder such as `<token>`, then send the feedback again.

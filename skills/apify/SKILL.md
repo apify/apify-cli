@@ -177,4 +177,4 @@ The `v2/` prefix and leading slash are optional.
 
 ## Reporting CLI problems
 
-`apify feedback "<what happened>"` can report a CLI problem you couldn't resolve to the Apify CLI team. Run `apify feedback -h` for its flags.
+`apify feedback "<what happened>"` can report a CLI problem you couldn't resolve to the Apify CLI team. Run `apify feedback -h` for its flags. Replace any token or password in the text with a placeholder such as `<token>`: feedback that contains a secret isn't sent.

@@ -141,6 +141,7 @@ DESCRIPTION
   https://apify.com/contact.
   It's sent even when telemetry is disabled, because you asked to send it. Don't
    include personal data, credentials, or secrets.
+  Feedback that contains an API token or another secret isn't sent.
 
 USAGE
   $ apify feedback <message> [--actor-id <value>]

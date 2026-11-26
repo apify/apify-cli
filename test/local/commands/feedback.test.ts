@@ -5,6 +5,7 @@ import { parseArgs } from 'node:util';
 import type { Mock } from 'vitest';
 
 import { FeedbackCommand } from '../../../src/commands/feedback.js';
+import { upsertProfile, writeProfileSecret } from '../../../src/lib/auth-file.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { TELEMETRY_FILE_PATH } from '../../../src/lib/consts.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -131,6 +132,76 @@ describe('apify feedback', () => {
 		expect(process.exitCode).toBe(1);
 		expect(lastErrorMessage()).toContain('2000');
 		expect(lastErrorMessage()).toContain('2001');
+	});
+
+	describe('credentials', () => {
+		const secret = 'a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8';
+		// A token from before tokens had a prefix: nothing about its shape gives it away.
+		const unprefixedToken = 'Zx9Kq2Lm8Vb4Nc6Hd1Jf3Gs5';
+
+		it.each([
+			[
+				'an Apify API token in the message',
+				{ args_message: `apify call my-actor --token apify_api_${secret} returns 401` },
+			],
+			[
+				'an Apify API token in a URL in --actual',
+				{ args_message: 'call fails', flags_actual: `https://api.apify.com/v2/acts?token=apify_api_${secret}` },
+			],
+			['a token in --expected', { args_message: 'call fails', flags_expected: `apify_api_${secret} to work` }],
+			['a token in --actor-id', { args_message: 'call fails', flags_actorId: `apify_api_${secret}` }],
+			['a token in --actor-run-id', { args_message: 'call fails', flags_actorRunId: `apify_api_${secret}` }],
+			['an unprefixed token after --token', { args_message: `apify login --token ${unprefixedToken} fails` }],
+			['an unprefixed token in a query string', { args_message: `GET /v2/acts?token=${unprefixedToken} is 401` }],
+			['a bearer token', { args_message: `curl -H "Authorization: Bearer ${unprefixedToken}" fails` }],
+			['a password', { args_message: `proxy rejects password: ${unprefixedToken}` }],
+		])('rejects %s without sending anything', async (_, input) => {
+			await testRunCommand(FeedbackCommand, input);
+
+			expect(fetchMock).not.toHaveBeenCalled();
+			expect(process.exitCode).toBe(1);
+			expect(lastErrorMessage()).toMatch(/Nothing was sent/);
+			expect(lastErrorMessage()).not.toContain(secret);
+			expect(lastErrorMessage()).not.toContain(unprefixedToken);
+		});
+
+		it('rejects the APIFY_TOKEN value even when nothing marks it as a token', async () => {
+			vi.stubEnv('APIFY_TOKEN', unprefixedToken);
+
+			await testRunCommand(FeedbackCommand, { args_message: `the run of ${unprefixedToken} never starts` });
+
+			expect(fetchMock).not.toHaveBeenCalled();
+			expect(process.exitCode).toBe(1);
+		});
+
+		it("rejects a stored account's token even when nothing marks it as a token", async () => {
+			upsertProfile('uid', {
+				name: null,
+				authMethod: 'token',
+				expiresAt: null,
+				hasRefreshToken: false,
+				loggedInAt: null,
+			});
+			writeProfileSecret('uid', 'token', unprefixedToken);
+
+			await testRunCommand(FeedbackCommand, { args_message: `the run of ${unprefixedToken} never starts` });
+
+			expect(fetchMock).not.toHaveBeenCalled();
+			expect(process.exitCode).toBe(1);
+		});
+
+		it.each([
+			'apify login --token <token> fails with 401',
+			'apify call --token $APIFY_TOKEN fails',
+			'export APIFY_TOKEN=YOUR_APIFY_TOKEN_HERE, then run apify push',
+			'the token misconfiguration message is confusing',
+			'apify_proxy_groups is ignored by apify run',
+		])('still sends a report that only talks about tokens: %s', async (message) => {
+			await testRunCommand(FeedbackCommand, { args_message: message });
+
+			expect(sentRequests()).toHaveLength(1);
+			expect(sentRequests()[0].body.properties.message).toBe(message);
+		});
 	});
 
 	it('marks the report as sent by an agent when one is detected, unless --sent-by overrides it', async () => {
