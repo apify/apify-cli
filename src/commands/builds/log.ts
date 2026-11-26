@@ -1,5 +1,6 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { isReducedBuild } from '../../lib/commands/agent-output.js';
 import { info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
 
@@ -39,6 +40,10 @@ export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 
 		info({ message: `Log for build with ID "${buildId}":\n` });
 
-		await outputJobLog({ job: build, apifyClient });
+		const result = await outputJobLog({ job: build, apifyClient });
+
+		if (result === 'no-logs' && isReducedBuild(build)) {
+			throw new Error(`You don't have access to the log of build with ID "${buildId}".`);
+		}
 	}
 }

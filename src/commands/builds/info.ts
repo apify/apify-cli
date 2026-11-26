@@ -83,7 +83,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 
 		if (build.finishedAt) {
 			message.push(
-				`  ${chalk.yellow('Finished')}: ${TimestampFormatter.display(build.finishedAt)} (took ${chalk.gray(DurationFormatter.format(build.stats?.durationMillis ?? 0))})`,
+				`  ${chalk.yellow('Finished')}: ${TimestampFormatter.display(build.finishedAt)} (took ${chalk.gray(DurationFormatter.format(build.stats?.durationMillis ?? build.finishedAt.getTime() - build.startedAt.getTime()))})`,
 			);
 		} else {
 			const diff = Date.now() - build.startedAt.getTime();

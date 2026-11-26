@@ -107,6 +107,11 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
 	}
 }
 
+// The API has no flag for the reduced build it returns to users who can't write to or build the Actor; only full builds carry `options`.
+export function isReducedBuild(build: Build): boolean {
+	return build.options === undefined;
+}
+
 export function consoleActorUrl(actorId: string): string {
 	return `${getConsoleUrl()}/actors/${actorId}`;
 }
