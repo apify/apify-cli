@@ -10,7 +10,6 @@ import {
 	exitCodeForWaitResult,
 	fetchLogTail,
 	formatResultSummary,
-	isReducedBuild,
 	waitForTerminalStatus,
 } from '../../lib/commands/agent-output.js';
 import { error, simpleLog } from '../../lib/outputs.js';
@@ -119,16 +118,13 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 
 		const links = [{ label: 'Build URL', url }];
 
-		const errorReason =
-			logTail.length === 0 && isReducedBuild(build) ? ["You don't have access to this build's log."] : logTail;
-
 		simpleLog({
 			message: formatResultSummary({
 				resultLabel: 'Apify build result',
 				overallStatus: build.status,
 				lines,
 				links,
-				errorReason: ok ? undefined : errorReason,
+				errorReason: ok ? undefined : logTail,
 			}),
 			stdout: true,
 		});
