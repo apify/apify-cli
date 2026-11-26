@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 
 import { describeStdinRead } from '../commands/read-stdin.js';
+import { REPORT_PROBLEM_INSTRUCTION } from '../consts.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import type { BuiltApifyCommand } from './apify-command.js';
 import { selectiveRenderHelpForCommand } from './help.js';
@@ -74,7 +75,7 @@ export class CommandError extends Error {
 
 				if (!match) {
 					throw new Error(
-						`Encountered unparsable error message from argument parser: ${this.message}.\n\nPlease report this issue at https://github.com/apify/apify-cli/issues`,
+						`Encountered unparsable error message from argument parser: ${this.message}.\n\nPlease report this issue: ${REPORT_PROBLEM_INSTRUCTION}.`,
 					);
 				}
 
@@ -93,7 +94,7 @@ export class CommandError extends Error {
 
 				if (!match) {
 					throw new Error(
-						`Encountered unparsable error message from argument parser: ${this.message}.\n\nPlease report this issue at https://github.com/apify/apify-cli/issues`,
+						`Encountered unparsable error message from argument parser: ${this.message}.\n\nPlease report this issue: ${REPORT_PROBLEM_INSTRUCTION}.`,
 					);
 				}
 
@@ -213,7 +214,7 @@ export class CommandError extends Error {
 
 				return [
 					'The CLI encountered an unhandled argument parsing error!',
-					`Please report this issue at https://github.com/apify/apify-cli/issues, and provide the following information:`,
+					`Please report this issue: ${REPORT_PROBLEM_INSTRUCTION}, and provide the following information:`,
 					'',
 					`- Error code: ${this.code} (${CommandErrorCode[this.code]})`,
 					`- Error metadata: ${JSON.stringify(this.metadata)}`,

@@ -30,3 +30,15 @@ apify telemetry disable
 ```
 
 Alternatively, set the `APIFY_CLI_DISABLE_TELEMETRY` environment variable to `1`.
+
+## Feedback
+
+`apify feedback` sends a report to the Apify team. Unlike other commands, it sends the text you pass to it. The report includes:
+
+- The message and any optional fields you pass, such as `--actor-id` or `--expected`.
+- The CLI version, OS, and install method.
+- The name of the command you ran before `apify feedback` and its exit code, without its arguments or flag values.
+- Whether a human or an AI agent sent it, and which agent, if the CLI detects one.
+- The same random ID and Apify user ID as other events.
+
+The CLI sends feedback even when telemetry is turned off, because you explicitly asked it to. Don't include personal data, credentials, or secrets.

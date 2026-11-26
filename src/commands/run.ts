@@ -21,6 +21,7 @@ import {
 	INTERRUPT_SIGNALS,
 	LEGACY_LOCAL_STORAGE_DIR,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
+	REPORT_PROBLEM_INSTRUCTION,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
 import { execWithLog } from '../lib/exec.js';
@@ -544,7 +545,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				}
 				default:
 					error({
-						message: `Failed to detect the language of your project. Please report this issue to the Apify team with your project structure over at https://github.com/apify/apify-cli/issues`,
+						message: `Failed to detect the language of your project. Please report this issue to the Apify team with your project structure: ${REPORT_PROBLEM_INSTRUCTION}.`,
 					});
 			}
 		} catch (err) {

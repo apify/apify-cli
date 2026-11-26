@@ -11,6 +11,7 @@ import { USER_AGENT } from '../../entrypoints/_shared.js';
 import { writeEntrypointShims } from '../../lib/bundleMigration.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { REPORT_PROBLEM_INSTRUCTION } from '../../lib/consts.js';
 import { execWithLog } from '../../lib/exec.js';
 import { DEVELOPMENT_VERSION_MARKER, type InstallMethod, useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import type { Asset } from '../../lib/hooks/useCLIVersionAssets.js';
@@ -165,7 +166,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			if (!assets.length) {
 				error({
 					message: [
-						'Failed to find the assets for your system and the provided version. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:',
+						`Failed to find the assets for your system and the provided version. Please report this issue: ${REPORT_PROBLEM_INSTRUCTION}, and provide the following information:`,
 						`- The version you are trying to upgrade to: ${versionWithoutV}`,
 						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
 					].join('\n'),
@@ -184,7 +185,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 				error({
 					message: [
-						`Failed to find the currently installed ${this.cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
+						`Failed to find the currently installed ${this.cliName} bundle. Please report this issue: ${REPORT_PROBLEM_INSTRUCTION}, and provide the following information:`,
 						`- The version you are trying to upgrade to: ${versionWithoutV}`,
 						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
 						`- The directory where the ${this.cliName} bundle is installed: ${bundleDirectory}`,
@@ -311,7 +312,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 				error({
 					message: [
-						`Failed to fetch the ${cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
+						`Failed to fetch the ${cliName} bundle. Please report this issue: ${REPORT_PROBLEM_INSTRUCTION}, and provide the following information:`,
 						`- The version you are trying to upgrade to: ${version}`,
 						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
 						`- The URL of the asset that failed to fetch: ${asset.browser_download_url}`,
@@ -355,7 +356,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 				error({
 					message: [
-						`Failed to write the ${cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
+						`Failed to write the ${cliName} bundle. Please report this issue: ${REPORT_PROBLEM_INSTRUCTION}, and provide the following information:`,
 						`- The version you are trying to upgrade to: ${version}`,
 						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
 						`- The URL of the asset that failed to fetch: ${asset.browser_download_url}`,

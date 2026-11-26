@@ -41,6 +41,10 @@ export const RENTAL_SUNSET_NOTICE_UNTIL = Date.UTC(2026, 9, 1); // 2026-10-01
 // should react to (aborting platform jobs, forwarding to local subprocesses).
 export const INTERRUPT_SIGNALS: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP'];
 
+// Completes a sentence such as "Please report this issue: ...". Issues get a reply, `apify feedback` doesn't.
+export const REPORT_PROBLEM_INSTRUCTION =
+	'run `apify feedback "<what happened>"`, or open an issue at https://github.com/apify/apify-cli/issues/new if you want a reply';
+
 export const GLOBAL_CONFIGS_FOLDER = () => {
 	const base = join(homedir(), '.apify');
 
