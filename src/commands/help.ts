@@ -62,6 +62,9 @@ export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 		}),
 	};
 
+	// Reading help after a failure shouldn't replace the failed command in a later `apify feedback`.
+	protected override recordAsLastCommand = false;
+
 	async run() {
 		const { commandString } = this.args;
 

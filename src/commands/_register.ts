@@ -18,6 +18,7 @@ import { UpgradeCommand } from './cli-management/upgrade.js';
 import { CreateCommand } from './create.js';
 import { DatasetsIndexCommand } from './datasets/_index.js';
 import { EditInputSchemaCommand } from './edit-input-schema.js';
+import { FeedbackCommand } from './feedback.js';
 import { HelpCommand } from './help.js';
 import { InfoCommand } from './info.js';
 import { WrapScrapyCommand } from './init-wrap-scrapy.js';
@@ -64,6 +65,7 @@ export const apifyCommands = [
 	InstallCommand,
 	CreateCommand,
 	EditInputSchemaCommand,
+	FeedbackCommand,
 	InfoCommand,
 	WrapScrapyCommand,
 	InitCommand,

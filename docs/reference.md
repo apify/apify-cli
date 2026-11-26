@@ -130,6 +130,56 @@ DESCRIPTION
 USAGE
   $ apify telemetry disable
 ```
+
+##### `apify feedback`
+
+```sh
+DESCRIPTION
+  Sends feedback about the Apify CLI to the Apify team: report a problem, or 
+  tell us something worked well.
+  It's one-way, so you won't get a reply. For support, use 
+  https://apify.com/contact.
+  It's sent even when telemetry is disabled, because you asked to send it. Don't
+   include personal data, credentials, or secrets.
+  Feedback that contains an API token or another secret isn't sent.
+
+USAGE
+  $ apify feedback <message> [--actor-id <value>]
+                   [--actor-run-id <value>] [--actual <value>]
+                   [--category
+                   bug|spec_mismatch|readme_unclear|missing_capability|improvement|worked_well]
+                   [--expected <value>] [--json] [--sent-by human|agent]
+                   [--sentiment positive|negative|neutral] [--source user|model]
+
+ARGUMENTS
+  message  What happened, or what worked. At most 2000 characters.
+
+FLAGS
+      --actor-id=<value>      ID of the Actor the feedback
+                              is about.
+      --actor-run-id=<value>  ID of the Actor run the
+                              feedback is about.
+      --actual=<value>        What actually happened. At
+                              most 2000 characters.
+      --category=<option>     What kind of feedback it is.
+                              Use improvement for suggestions that aren't bugs.
+                              <options:
+                              bug|spec_mismatch|readme_unclear|missing_capability|improvement|worked_well>
+      --expected=<value>      What you expected to happen.
+                              At most 2000 characters.
+      --json                  Format the command output as
+                              JSON.
+      --sent-by=<option>      Whether a human or an agent
+                              ran this command. Defaults to agent when the CLI
+                              detects an AI agent, otherwise human.
+                              <options: human|agent>
+      --sentiment=<option>    How it went overall.
+                              <options: positive|negative|neutral>
+      --source=<option>       Who decided to send it: user
+                              means the user asked to send it, model means the agent
+                              sent it on its own.
+                              <options: user|model>
+```
 <!-- general-commands-end -->
 <!-- prettier-ignore-end -->
 

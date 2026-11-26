@@ -2,6 +2,7 @@ import { USER_AGENT } from '../../../entrypoints/_shared.js';
 import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 import type { InstallMethod } from '../useCLIMetadata.js';
 import { useCLIMetadata } from '../useCLIMetadata.js';
+import { maskCredentialsDeep } from './credentialsInText.js';
 import { useTelemetryEnabled } from './useTelemetryEnabled.js';
 import { useTelemetryIdentifiers } from './useTelemetryIdentifiers.js';
 
@@ -69,52 +70,75 @@ interface CliCommandEvent {
 	wasRetried?: boolean;
 }
 
-export interface TrackEventMap {
-	cli_command: CliCommandEvent;
+/** Sent by `apify feedback`. Property names mirror the MCP server's `buildReportedProblemProperties`. */
+interface CliReportedProblemEvent {
+	message: string;
+	actor_id?: string;
+	actor_run_id?: string;
+	sentiment?: 'positive' | 'negative' | 'neutral';
+	category?: 'bug' | 'spec_mismatch' | 'readme_unclear' | 'missing_capability' | 'improvement' | 'worked_well';
+	source?: 'user' | 'model';
+	expected?: string;
+	actual?: string;
+	app_version: string;
+	os: string;
+	os_arch: string;
+	install_method: InstallMethod;
+	last_command?: string;
+	last_command_exit_code?: number;
+	sent_by: 'human' | 'agent';
+	ai_agent?: string;
 }
 
-export async function trackEvent<Event extends keyof TrackEventMap>(event: Event, eventData: TrackEventMap[Event]) {
-	const identifiers = await useTelemetryIdentifiers();
+export interface TrackEventMap {
+	'cli_command': CliCommandEvent;
+	'CLI Reported Problem': CliReportedProblemEvent;
+}
 
-	const segmentPayload = {
-		anonymousId: identifiers.anonymousId,
-		context: {
-			app: {
-				name: 'apify-cli',
-				version: metadata.version,
-				build: metadata.hash,
-			},
-			library: {
-				name: 'apify-cli',
-				version: metadata.version,
-			},
-			os: {
-				name: metadata.platform,
-			},
-			userAgent: USER_AGENT,
-			channel: 'server',
-		},
-		event,
-		properties: {
-			...eventData,
-			app: 'cli',
-		},
-		timestamp: new Date().toISOString(),
-		userId: identifiers.userId,
-
-		// write key
-		writeKey: SEGMENT_WRITE_KEY,
-	};
-
-	cliDebugPrint('trackEvent', segmentPayload);
-	const telemetryEnabled = await useTelemetryEnabled();
-
-	if (!telemetryEnabled) {
-		cliDebugPrint('trackEvent', 'telemetry disabled');
-		return;
-	}
-
+/**
+ * Sends the event to Segment whether or not telemetry is enabled, so only call it directly for
+ * something the user explicitly asked to send. Resolves to whether Segment accepted the event; never throws.
+ */
+export async function sendEvent<Event extends keyof TrackEventMap>(
+	event: Event,
+	eventData: TrackEventMap[Event],
+): Promise<boolean> {
 	try {
+		const identifiers = await useTelemetryIdentifiers();
+
+		const segmentPayload = {
+			anonymousId: identifiers.anonymousId,
+			context: {
+				app: {
+					name: 'apify-cli',
+					version: metadata.version,
+					build: metadata.hash,
+				},
+				library: {
+					name: 'apify-cli',
+					version: metadata.version,
+				},
+				os: {
+					name: metadata.platform,
+				},
+				userAgent: USER_AGENT,
+				channel: 'server',
+			},
+			event,
+			// The last line of defence: no event leaves with a recognisable credential, whatever built it.
+			properties: maskCredentialsDeep({
+				...eventData,
+				app: 'cli',
+			}),
+			timestamp: new Date().toISOString(),
+			userId: identifiers.userId,
+
+			// write key
+			writeKey: SEGMENT_WRITE_KEY,
+		};
+
+		cliDebugPrint('trackEvent', segmentPayload);
+
 		const res = await fetch(SEGMENT_API_URL, {
 			method: 'POST',
 			body: JSON.stringify(segmentPayload),
@@ -122,11 +146,25 @@ export async function trackEvent<Event extends keyof TrackEventMap>(event: Event
 
 		if (!res.ok) {
 			cliDebugPrint('trackEvent', 'failed to send event', await res.text());
-			return;
+			return false;
 		}
 
 		cliDebugPrint('trackEvent', 'event sent');
+		return true;
 	} catch (error) {
 		cliDebugPrint('trackEvent', 'failed to send event', error);
+		return false;
 	}
+}
+
+export async function trackEvent<Event extends keyof TrackEventMap>(event: Event, eventData: TrackEventMap[Event]) {
+	// An unreadable state file means no telemetry, not a failed command.
+	const telemetryEnabled = await useTelemetryEnabled().catch(() => false);
+
+	if (!telemetryEnabled) {
+		cliDebugPrint('trackEvent', 'telemetry disabled');
+		return;
+	}
+
+	await sendEvent(event, eventData);
 }

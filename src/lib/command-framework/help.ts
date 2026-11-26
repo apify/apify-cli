@@ -3,6 +3,7 @@ import indentString from 'indent-string';
 import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
+import { REPORT_PROBLEM_INSTRUCTION } from '../consts.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { error } from '../outputs.js';
 import type { BuiltApifyCommand } from './apify-command.js';
@@ -213,7 +214,7 @@ export function renderMainHelpMenu(entrypoint: string) {
 	result.push(
 		chalk.bold('TROUBLESHOOTING'),
 		'  For general support, reach out to us at https://apify.com/contact.',
-		'  If you believe you are encountering a bug, file it at https://github.com/apify/apify-cli/issues/new.',
+		`  If you believe you're encountering a bug, ${REPORT_PROBLEM_INSTRUCTION}.`,
 	);
 
 	return result.join('\n').trim();

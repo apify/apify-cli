@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -59,7 +59,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
@@ -69,11 +69,12 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		await checkAndUpdateLastCommand('apify push');
+		await checkAndUpdateLastCommand('apify push', 3);
 
 		const state = readTelemetryState();
 		expect(state.lastCommand).toBe('apify push');
 		expect(state.lastCommandTimestamp).toBe(50_000);
+		expect(state.lastCommandExitCode).toBe(3);
 	});
 
 	test('returns true when the same command is repeated within the retry window', async () => {
@@ -90,7 +91,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(true);
 	});
@@ -108,7 +109,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
@@ -126,7 +127,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify push');
+		const result = await checkAndUpdateLastCommand('apify push', 0);
 
 		expect(result).toBe(false);
 	});
@@ -144,7 +145,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		await checkAndUpdateLastCommand('apify push');
+		await checkAndUpdateLastCommand('apify push', 0);
 
 		const state = readTelemetryState();
 		expect(state.lastCommand).toBe('apify push');
@@ -164,7 +165,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
@@ -177,7 +178,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
@@ -196,7 +197,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(true);
 	});
@@ -215,8 +216,20 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
+	});
+
+	test('replaces the state file instead of rewriting it, so a command running at the same time never reads it half-written', async () => {
+		writeTelemetryState({ version: 1, enabled: true, anonymousId: 'CLI:test' });
+		const inodeBefore = statSync(telemetryFilePath).ino;
+
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
+
+		await checkAndUpdateLastCommand('apify push', 0);
+
+		expect(readTelemetryState().lastCommand).toBe('apify push');
+		expect(statSync(telemetryFilePath).ino).not.toBe(inodeBefore);
 	});
 });

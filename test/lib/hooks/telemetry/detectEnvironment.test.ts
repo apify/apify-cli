@@ -4,17 +4,45 @@ import { detectAiAgent, detectCi, detectIsInteractive } from '../../../../src/li
 // so we mock it to control the return value per-test.
 vi.mock('ci-info', () => ({ default: { isCI: false, id: null } }));
 
+// Devin is detected by a file on disk, so keep the suite deterministic when it runs inside Devin.
+vi.mock('node:fs', async (importOriginal) => ({
+	...(await importOriginal<typeof import('node:fs')>()),
+	existsSync: () => false,
+}));
+
 describe('detectAiAgent', () => {
 	const agentEnvVars = [
 		'CLAUDECODE',
 		'CLAUDE_CODE_ENTRYPOINT',
+		'CLAUDE_CODE',
+		'CLAUDE_CODE_IS_COWORK',
 		'CURSOR_AGENT',
+		'CURSOR_EXTENSION_HOST_ROLE',
+		'CURSOR_TRACE_ID',
 		'CLINE_ACTIVE',
 		'CODEX_SANDBOX',
 		'CODEX_THREAD_ID',
+		'CODEX_CI',
+		'CODEX_SANDBOX_NETWORK_DISABLED',
+		'CODEX_INTERNAL_ORIGINATOR_OVERRIDE',
 		'GEMINI_CLI',
 		'OPENCODE',
+		'OPENCODE_CLIENT',
 		'OPENCLAW_SHELL',
+		'ANTIGRAVITY_AGENT',
+		'ANTIGRAVITY_CLI_ALIAS',
+		'AUGMENT_AGENT',
+		'HERMES_AGENT',
+		'GROK_AGENT',
+		'GROK_SESSION_ID',
+		'KIRO_SESSION_ID',
+		'TERM_PROGRAM',
+		'REPL_ID',
+		'COPILOT_MODEL',
+		'COPILOT_ALLOW_ALL',
+		'COPILOT_GITHUB_TOKEN',
+		'AI_AGENT',
+		'AGENT',
 	];
 
 	beforeEach(() => {
@@ -43,6 +71,27 @@ describe('detectAiAgent', () => {
 
 		// CURSOR_AGENT appears before GEMINI_CLI in the lookup table
 		expect(detectAiAgent()).toBe('cursor');
+	});
+
+	test('detects an agent from a newly added env var', () => {
+		vi.stubEnv('CODEX_CI', '1');
+		expect(detectAiAgent()).toBe('codex_cli');
+	});
+
+	test('prefers an agent-specific env var over the generic AI_AGENT', () => {
+		vi.stubEnv('CLAUDECODE', '1');
+		vi.stubEnv('AI_AGENT', 'something-else');
+		expect(detectAiAgent()).toBe('claude_code');
+	});
+
+	test('returns the trimmed AI_AGENT value as the agent name', () => {
+		vi.stubEnv('AI_AGENT', '  my-agent  ');
+		expect(detectAiAgent()).toBe('my-agent');
+	});
+
+	test('does not treat CURSOR_TRACE_ID alone as an agent', () => {
+		vi.stubEnv('CURSOR_TRACE_ID', 'abc123');
+		expect(detectAiAgent()).toBeUndefined();
 	});
 });
 

@@ -24,7 +24,7 @@ export type CredentialsBackend = 'keyring' | 'file';
 
 export type SecretKind = 'token' | 'proxy-password' | 'refresh-token';
 
-const SECRET_KINDS: readonly SecretKind[] = ['token', 'proxy-password', 'refresh-token'];
+export const SECRET_KINDS: readonly SecretKind[] = ['token', 'proxy-password', 'refresh-token'];
 
 export interface KeyringKey {
 	service: string;

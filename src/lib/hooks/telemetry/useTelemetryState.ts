@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { atomicWriteJson } from '../../auth-file.js';
 import { TELEMETRY_FILE_PATH } from '../../consts.js';
 import { info } from '../../outputs.js';
 import type { AuthJSON } from '../../types.js';
@@ -24,6 +24,7 @@ interface TelemetryStateV1 {
 	anonymousId: string;
 	lastCommand?: string;
 	lastCommandTimestamp?: number;
+	lastCommandExitCode?: number;
 }
 
 const telemetryWarningText = [
@@ -99,12 +100,8 @@ export function updateTelemetryState(state: LatestTelemetryState, updater?: Stat
 	const stateClone = { ...state };
 	updater?.(stateClone);
 
-	const filePath = TELEMETRY_FILE_PATH();
-	const dirPath = dirname(filePath);
-
-	mkdirSync(dirPath, { recursive: true });
-
-	writeFileSync(TELEMETRY_FILE_PATH(), JSON.stringify(stateClone, null, '\t'));
+	// Every command writes this file when it starts and ends, so commands run in parallel write it at the same time.
+	atomicWriteJson(TELEMETRY_FILE_PATH(), stateClone);
 }
 
 export async function updateUserId(userId: string | null) {
@@ -123,7 +120,7 @@ const RETRY_WINDOW_MS = 10_000;
  * last-command state for future calls. Detection is best-effort — concurrent invocations may
  * both read stale state, which is acceptable for an analytics heuristic.
  */
-export async function checkAndUpdateLastCommand(commandString: string): Promise<boolean> {
+export async function checkAndUpdateLastCommand(commandString: string, exitCode?: number): Promise<boolean> {
 	try {
 		const state = await useTelemetryState();
 		const now = Date.now();
@@ -133,6 +130,7 @@ export async function checkAndUpdateLastCommand(commandString: string): Promise<
 		updateTelemetryState(state, (stateToUpdate) => {
 			stateToUpdate.lastCommand = commandString;
 			stateToUpdate.lastCommandTimestamp = now;
+			stateToUpdate.lastCommandExitCode = exitCode;
 		});
 
 		return wasRetried;

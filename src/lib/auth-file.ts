@@ -103,7 +103,7 @@ export function writeAuthFile(data: AuthFile) {
 }
 
 /** Temp file then rename: two CLI processes can run at once, and a torn file reads as logged out. */
-function atomicWriteJson(path: string, data: unknown) {
+export function atomicWriteJson(path: string, data: unknown) {
 	ensureApifyDirectory(path);
 
 	const tempPath = `${path}.tmp-${cryptoRandomObjectId(8)}`;
