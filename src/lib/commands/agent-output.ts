@@ -111,16 +111,15 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
  * Tells whether the API returned a reduced build.
  *
  * Users who can read an Actor but can neither write to it nor build it get a build with only
- * `id`, `actId`, `buildNumber`, `status`, the timestamps and the Actor definition fields. Its log
+ * the identifiers, `status`, the timestamps, `meta.origin` and the Actor definition fields. Its log
  * returns 404, the same as for a build that has no log, so commands use this to tell the two apart.
  *
- * The API has no explicit flag for it, so this infers it from `userId`, the user who started the
- * build. Every full build carries it and a reduced one doesn't. `meta` is no use here, the reduced
- * build keeps it, `origin` included.
+ * The API has no explicit flag for it, so this infers it from `options`. The platform sets them
+ * when it creates a build, so every full build carries them and a reduced one doesn't. `userId`
+ * and `meta` are no use here, the reduced build keeps both.
  */
 export function isReducedBuild(build: Build): boolean {
-	// Typed as always present, but a reduced build breaks that contract.
-	return !(build as Partial<Pick<Build, 'userId'>>).userId;
+	return build.options === undefined;
 }
 
 export function consoleActorUrl(actorId: string): string {

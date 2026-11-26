@@ -25,11 +25,12 @@ useAuthSetup();
 const { logMessages } = useConsoleSpy();
 
 // What the API returns to users who can read the Actor but can neither write to it nor build it.
-// `meta` stays, `userId` and the rest don't.
+// `userId` and `meta.origin` stay, the build internals such as `options` and `stats` don't.
 const reducedBuild = {
 	meta: { origin: 'CLI' },
 	id: 'buildId',
 	actId: 'actorId',
+	userId: 'userId',
 	buildNumber: '1.0.30',
 	status: 'FAILED',
 	startedAt: new Date('2026-01-01T10:00:00.000Z'),
@@ -38,7 +39,7 @@ const reducedBuild = {
 
 const fullBuild = {
 	...reducedBuild,
-	userId: 'userId',
+	options: { useCache: true, memoryMbytes: 4096, diskMbytes: 8192 },
 	stats: { durationMillis: 65_000, computeUnits: 0.0123, imageSizeBytes: 1024 * 1024 },
 };
 
@@ -81,8 +82,7 @@ describe('builds commands with a reduced build', () => {
 		expect(logMessages.error).toEqual([]);
 		expect(output).toContain('Build Number: 1.0.30');
 		expect(output).toContain('Status: Failed');
-		expect(output).toContain('Finished:');
-		expect(output).not.toContain('took');
+		expect(output).toContain('took 1 minute 5 seconds');
 		expect(output).not.toContain('Compute Units');
 		expect(output).not.toContain('Docker Image Size');
 		expect(output).toContain('Origin: CLI');
