@@ -276,6 +276,8 @@ export async function runCLI(entrypoint: string) {
 
 		cliDebugPrint('CommandArgsResult', commandResult);
 	} catch (err) {
+		await instance['_recordUsageError']();
+
 		const commandError = CommandError.into(err, FinalCommand);
 
 		error({ message: commandError.getPrettyMessage() });

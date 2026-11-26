@@ -31,7 +31,7 @@ export class FeedbackCommand extends ApifyCommand<typeof FeedbackCommand> {
 
 	static override examples = [
 		{
-			description: 'Report a problem in plain words. Quotes are optional.',
+			description: "Report a problem in plain words. Quote the message, so a flag it mentions isn't read as an option.",
 			command: 'apify feedback "apify push hangs on Windows after the build finishes"',
 		},
 		{
@@ -130,7 +130,7 @@ export class FeedbackCommand extends ApifyCommand<typeof FeedbackCommand> {
 
 		if (!sent) {
 			throw new Error(
-				"Your feedback couldn't be sent. Try again, or open an issue at https://github.com/apify/apify-cli/issues.",
+				"Your feedback couldn't be sent. Try again, or open an issue at https://github.com/apify/apify-cli/issues/new.",
 			);
 		}
 

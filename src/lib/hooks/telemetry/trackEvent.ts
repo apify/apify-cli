@@ -70,7 +70,7 @@ interface CliCommandEvent {
 }
 
 /** Sent by `apify feedback`. Property names mirror the MCP server's `buildReportedProblemProperties`. */
-export interface CliReportedProblemEvent {
+interface CliReportedProblemEvent {
 	message: string;
 	actor_id?: string;
 	actor_run_id?: string;
@@ -156,7 +156,8 @@ export async function sendEvent<Event extends keyof TrackEventMap>(
 }
 
 export async function trackEvent<Event extends keyof TrackEventMap>(event: Event, eventData: TrackEventMap[Event]) {
-	const telemetryEnabled = await useTelemetryEnabled();
+	// An unreadable state file means no telemetry, not a failed command.
+	const telemetryEnabled = await useTelemetryEnabled().catch(() => false);
 
 	if (!telemetryEnabled) {
 		cliDebugPrint('trackEvent', 'telemetry disabled');

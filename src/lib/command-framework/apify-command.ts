@@ -277,7 +277,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	protected skipTelemetry = false;
 
-	/** Set to false in a command that reports on the command before it, so it doesn't take its place. */
+	/** Set to false in a command that reports on or explains the command before it, so it doesn't take its place. */
 	protected recordAsLastCommand = true;
 
 	protected skipNotices = false;
@@ -364,6 +364,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 		}
 
+		// Recorded before anything can wait on stdin, so a later `apify feedback` still names a command that hung or was killed.
+		if (this._tracksLastCommand) {
+			this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
+		}
+
 		const missingRequiredArgs = new Map<string, TaggedArgBuilder<ArgTag, unknown>>();
 
 		if (this.ctor.args) {
@@ -402,6 +407,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		if (missingRequiredArgs.size) {
 			process.exitCode = 1;
 			this._printMissingRequiredArgs(missingRequiredArgs);
+			await this._recordUsageError();
 			return;
 		}
 
@@ -441,8 +447,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				this.telemetryData.exitCode = exitCode;
 				this.telemetryData.durationMs = Date.now() - startTime;
 
-				if (this.recordAsLastCommand) {
-					this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString, exitCode);
+				// Written again at the end, so the command also outranks any CLI command the Actor ran under `apify run`.
+				if (this._tracksLastCommand) {
+					await checkAndUpdateLastCommand(this.commandString, exitCode);
 				}
 
 				await trackEvent('cli_command', this.telemetryData);
@@ -454,6 +461,17 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				await useRentalSunsetNotice();
 			}
 		}
+	}
+
+	/** A usage error never reaches `run()`, but it's still the command a later `apify feedback` is about. */
+	private async _recordUsageError() {
+		if (this._tracksLastCommand) {
+			await checkAndUpdateLastCommand(this.commandString, 1);
+		}
+	}
+
+	private get _tracksLastCommand() {
+		return !this.skipTelemetry && this.recordAsLastCommand;
 	}
 
 	private _userFlagNameToRegisteredName(

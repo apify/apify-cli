@@ -1,5 +1,6 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { parseArgs } from 'node:util';
 
 import type { Mock } from 'vitest';
 
@@ -142,5 +143,34 @@ describe('apify feedback', () => {
 		const [detected, overridden] = sentRequests();
 		expect(detected.body.properties).toMatchObject({ sent_by: 'agent', ai_agent: 'claude_code' });
 		expect(overridden.body.properties).toMatchObject({ sent_by: 'human', ai_agent: 'claude_code' });
+	});
+
+	describe('last command', () => {
+		// testRunCommand skips the last-command bookkeeping, so run the command the way the entrypoint does.
+		async function runLikeEntrypoint(args: string[]) {
+			const instance = new FeedbackCommand('apify', 'feedback', 'feedback');
+			const parsed = parseArgs({ ...instance['_buildParseArgsOption'](), args });
+
+			await instance['_run'](parsed);
+		}
+
+		function recordedLastCommand() {
+			const state = JSON.parse(readFileSync(TELEMETRY_FILE_PATH(), 'utf-8'));
+			return { command: state.lastCommand, exitCode: state.lastCommandExitCode };
+		}
+
+		beforeEach(() => {
+			vi.stubEnv('APIFY_CLI_DISABLE_TELEMETRY', '1');
+		});
+
+		it('still names the reported command in a second report', async () => {
+			await runLikeEntrypoint(['push hangs']);
+			await runLikeEntrypoint(['push still hangs']);
+
+			const [first, second] = sentRequests();
+			expect(first.body.properties).toMatchObject({ last_command: 'actors push', last_command_exit_code: 2 });
+			expect(second.body.properties).toMatchObject({ last_command: 'actors push', last_command_exit_code: 2 });
+			expect(recordedLastCommand()).toEqual({ command: 'actors push', exitCode: 2 });
+		});
 	});
 });

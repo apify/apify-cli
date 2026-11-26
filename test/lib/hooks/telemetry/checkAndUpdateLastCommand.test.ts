@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -219,5 +219,17 @@ describe('checkAndUpdateLastCommand', () => {
 		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
+	});
+
+	test('replaces the state file instead of rewriting it, so a command running at the same time never reads it half-written', async () => {
+		writeTelemetryState({ version: 1, enabled: true, anonymousId: 'CLI:test' });
+		const inodeBefore = statSync(telemetryFilePath).ino;
+
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
+
+		await checkAndUpdateLastCommand('apify push', 0);
+
+		expect(readTelemetryState().lastCommand).toBe('apify push');
+		expect(statSync(telemetryFilePath).ino).not.toBe(inodeBefore);
 	});
 });
