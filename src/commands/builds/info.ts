@@ -104,13 +104,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 			message.push(`  ${chalk.yellow('Docker Image Size')}: ${prettyPrintBytes({ bytes: dockerImageSize })}`);
 		}
 
-		// A reduced build (see `isReducedBuild`) has an empty `meta`, so there's no origin to print.
-		// Optional chaining also covers `meta` missing entirely.
-		const origin = (build.meta as Partial<typeof build.meta> | undefined)?.origin;
-
-		if (origin) {
-			message.push(`  ${chalk.yellow('Origin')}: ${origin}`);
-		}
+		message.push(`  ${chalk.yellow('Origin')}: ${build.meta.origin ?? 'UNKNOWN'}`);
 
 		message.push('');
 

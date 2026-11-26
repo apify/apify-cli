@@ -114,20 +114,13 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
  * `id`, `actId`, `buildNumber`, `status`, the timestamps and the Actor definition fields. Its log
  * returns 404, the same as for a build that has no log, so commands use this to tell the two apart.
  *
- * The API has no explicit flag for it, so this infers it from two fields that every full build
- * carries and a reduced one doesn't:
- * - `userId`: the user who started the build. It's left out of the reduced build.
- * - `meta.origin`: where the build was started from. The reduced build keeps `meta`, to stay
- *   compatible with clients that read it without a guard, but as an empty object.
- *
- * Don't check for `meta` itself, it's present either way. Both fields must be missing, so a full
- * build that lacks one of them for any reason isn't mistaken for a reduced one.
+ * The API has no explicit flag for it, so this infers it from `userId`, the user who started the
+ * build. Every full build carries it and a reduced one doesn't. `meta` is no use here, the reduced
+ * build keeps it, `origin` included.
  */
 export function isReducedBuild(build: Build): boolean {
 	// Typed as always present, but a reduced build breaks that contract.
-	const { userId, meta } = build as Partial<Pick<Build, 'userId'>> & { meta?: Partial<Build['meta']> };
-
-	return !userId && !meta?.origin;
+	return !(build as Partial<Pick<Build, 'userId'>>).userId;
 }
 
 export function consoleActorUrl(actorId: string): string {
