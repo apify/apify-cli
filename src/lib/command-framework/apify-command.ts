@@ -434,10 +434,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			if (!this.skipTelemetry) {
 				this.telemetryData.flagsUsed = Object.keys(this.flags);
-				this.telemetryData.exitCode = typeof process.exitCode === 'number' ? process.exitCode : 0;
+				const exitCode = typeof process.exitCode === 'number' ? process.exitCode : 0;
+				this.telemetryData.exitCode = exitCode;
 				this.telemetryData.durationMs = Date.now() - startTime;
 
-				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
+				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString, exitCode);
 
 				await trackEvent('cli_command', this.telemetryData);
 			}

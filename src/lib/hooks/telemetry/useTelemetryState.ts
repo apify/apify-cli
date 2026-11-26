@@ -24,6 +24,7 @@ interface TelemetryStateV1 {
 	anonymousId: string;
 	lastCommand?: string;
 	lastCommandTimestamp?: number;
+	lastCommandExitCode?: number;
 }
 
 const telemetryWarningText = [
@@ -123,7 +124,7 @@ const RETRY_WINDOW_MS = 10_000;
  * last-command state for future calls. Detection is best-effort — concurrent invocations may
  * both read stale state, which is acceptable for an analytics heuristic.
  */
-export async function checkAndUpdateLastCommand(commandString: string): Promise<boolean> {
+export async function checkAndUpdateLastCommand(commandString: string, exitCode: number): Promise<boolean> {
 	try {
 		const state = await useTelemetryState();
 		const now = Date.now();
@@ -133,6 +134,7 @@ export async function checkAndUpdateLastCommand(commandString: string): Promise<
 		updateTelemetryState(state, (stateToUpdate) => {
 			stateToUpdate.lastCommand = commandString;
 			stateToUpdate.lastCommandTimestamp = now;
+			stateToUpdate.lastCommandExitCode = exitCode;
 		});
 
 		return wasRetried;

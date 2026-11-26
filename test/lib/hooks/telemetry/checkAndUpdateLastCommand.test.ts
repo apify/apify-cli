@@ -59,7 +59,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
@@ -69,11 +69,12 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		await checkAndUpdateLastCommand('apify push');
+		await checkAndUpdateLastCommand('apify push', 3);
 
 		const state = readTelemetryState();
 		expect(state.lastCommand).toBe('apify push');
 		expect(state.lastCommandTimestamp).toBe(50_000);
+		expect(state.lastCommandExitCode).toBe(3);
 	});
 
 	test('returns true when the same command is repeated within the retry window', async () => {
@@ -90,7 +91,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(true);
 	});
@@ -108,7 +109,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
@@ -126,7 +127,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify push');
+		const result = await checkAndUpdateLastCommand('apify push', 0);
 
 		expect(result).toBe(false);
 	});
@@ -144,7 +145,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		await checkAndUpdateLastCommand('apify push');
+		await checkAndUpdateLastCommand('apify push', 0);
 
 		const state = readTelemetryState();
 		expect(state.lastCommand).toBe('apify push');
@@ -164,7 +165,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
@@ -177,7 +178,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
@@ -196,7 +197,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(true);
 	});
@@ -215,7 +216,7 @@ describe('checkAndUpdateLastCommand', () => {
 
 		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
-		const result = await checkAndUpdateLastCommand('apify run');
+		const result = await checkAndUpdateLastCommand('apify run', 0);
 
 		expect(result).toBe(false);
 	});
