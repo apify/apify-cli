@@ -38,4 +38,4 @@ apify help COMMAND
 
 ## Need help?
 
-For general support, reach out to us at [apify.com/contact](https://apify.com/contact). You can also join [Apify Discord](https://apify.com/discord), if you have a question. If you believe you are encountering a bug, file it on [GitHub](https://github.com/apify/apify-cli/issues/new).
+For general support, reach out to us at [apify.com/contact](https://apify.com/contact). You can also join [Apify Discord](https://apify.com/discord), if you have a question. If you believe you're encountering a bug, run `apify feedback "<what happened>"`, or file it on [GitHub](https://github.com/apify/apify-cli/issues/new) if you want a reply.

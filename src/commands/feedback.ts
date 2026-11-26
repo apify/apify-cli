@@ -89,6 +89,9 @@ export class FeedbackCommand extends ApifyCommand<typeof FeedbackCommand> {
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-feedback';
 
+	// A retried or second report should still name the command it's about, not `feedback`.
+	protected override recordAsLastCommand = false;
+
 	async run() {
 		const message = this.args.message.trim();
 
@@ -119,7 +122,6 @@ export class FeedbackCommand extends ApifyCommand<typeof FeedbackCommand> {
 			os: metadata.platform,
 			os_arch: metadata.arch,
 			install_method: metadata.installMethod,
-			// Commands record themselves after they finish, so this is still the command that ran before `feedback`.
 			last_command: telemetryState.lastCommand,
 			last_command_exit_code: telemetryState.lastCommandExitCode,
 			sent_by: this.flags.sentBy ?? (aiAgent ? 'agent' : 'human'),

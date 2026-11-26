@@ -277,6 +277,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	protected skipTelemetry = false;
 
+	/** Set to false in a command that reports on the command before it, so it doesn't take its place. */
+	protected recordAsLastCommand = true;
+
 	protected skipNotices = false;
 
 	public constructor(entrypoint: string, commandString: string, aliasUsed: string, subcommandAliasUsed?: string) {
@@ -438,7 +441,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				this.telemetryData.exitCode = exitCode;
 				this.telemetryData.durationMs = Date.now() - startTime;
 
-				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString, exitCode);
+				if (this.recordAsLastCommand) {
+					this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString, exitCode);
+				}
 
 				await trackEvent('cli_command', this.telemetryData);
 			}

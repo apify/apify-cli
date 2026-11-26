@@ -214,7 +214,7 @@ export function renderMainHelpMenu(entrypoint: string) {
 	result.push(
 		chalk.bold('TROUBLESHOOTING'),
 		'  For general support, reach out to us at https://apify.com/contact.',
-		`  If you believe you are encountering a bug, ${REPORT_PROBLEM_INSTRUCTION}.`,
+		`  If you believe you're encountering a bug, ${REPORT_PROBLEM_INSTRUCTION}.`,
 	);
 
 	return result.join('\n').trim();
